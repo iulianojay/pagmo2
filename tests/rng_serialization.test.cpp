@@ -28,6 +28,7 @@ see https://www.gnu.org/licenses/. */
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <iterator>
 #include <random>
 #include <sstream>
