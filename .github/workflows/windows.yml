@@ -105,27 +105,3 @@ jobs:
           $env:PATH = "$PWD\build\release\Release;$env:PATH"
           ctest --test-dir build/release -C Release -j4 --output-on-failure
         shell: powershell
-
-  windows-debug:
-    name: Windows - Debug Build
-    runs-on: windows-latest
-    needs: windows-all-deps
-    steps:
-      - uses: actions/checkout@v4
-      - name: Configure CMake
-        run: |
-          cmake -B build/debug -G "Visual Studio 17 2022" -A x64 `
-                -DCPM_SOURCE_CACHE="$PWD/build/_deps" `
-                -DPAGMO_BUILD_TESTS=ON `
-                -DPAGMO_WITH_EIGEN3=ON `
-                -DPAGMO_WITH_NLOPT=ON `
-                -DPAGMO_WITH_IPOPT=OFF
-        shell: powershell
-      - name: Build
-        run: cmake --build build/debug --config Debug --parallel
-        shell: powershell
-      - name: Test
-        run: |
-          $env:PATH = "$PWD\build\debug\Debug;$env:PATH"
-          ctest --test-dir build/debug -C Debug -j4 --output-on-failure
-        shell: powershell

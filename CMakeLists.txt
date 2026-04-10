@@ -18,6 +18,13 @@ project(pagmo VERSION 2.19.1 LANGUAGES CXX C)
 # Setup module path.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/cmake/yacma")
 
+# On Windows (MSVC multi-config), ensure ALL DLLs (pagmo + TBB + optional deps)
+# land in the same per-config directory so test executables can find them.
+# This must be set before CPM/subdirectory includes so it is inherited by all targets.
+if(WIN32)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+endif()
+
 # Include CPM for modern dependency management
 include(cmake/CPM.cmake)
 

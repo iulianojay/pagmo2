@@ -1,8 +1,11 @@
 # PaGMO - CMake script to find or build cereal for serialization
 # Configures: cereal as a header-only library
 
-# Required version of cereal (using a stable release)
+# Pinned to a post-1.3.2 master commit that fixes the
+# -Wmissing-template-arg-list-after-template-kw error in tuple.hpp
+# triggered by LLVM 20 / Apple Clang 17+ (commit d81e2f7, Mar 6 2026).
 set(_PAGMO_REQUIRED_CEREAL_VERSION 1.3.2)
+set(_PAGMO_CEREAL_GIT_TAG d81e2f7df7b334fee057e53017388d02e555a836)
 
 # Try to find cereal first
 find_package(cereal ${_PAGMO_REQUIRED_CEREAL_VERSION} QUIET)
@@ -17,7 +20,7 @@ if(NOT cereal_FOUND)
         NAME cereal
         VERSION ${_PAGMO_REQUIRED_CEREAL_VERSION}
         GITHUB_REPOSITORY USCiLab/cereal
-        GIT_TAG v${_PAGMO_REQUIRED_CEREAL_VERSION}
+        GIT_TAG ${_PAGMO_CEREAL_GIT_TAG}
         OPTIONS
             "JUST_INSTALL_CEREAL ON"
             "SKIP_PERFORMANCE_COMPARISON ON"
