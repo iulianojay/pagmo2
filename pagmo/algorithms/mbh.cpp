@@ -176,7 +176,7 @@ population mbh::evolve(population pop) const
             // Prints a log line after each call to the inner algorithm
             // 1 - Every 50 lines print the column names
             if (count % 50u == 1u) {
-                print("\n", std::setw(7), "Fevals:", std::setw(15), "Best:", std::setw(15), "Violated:", std::setw(15),
+                pagmo::print("\n", std::setw(7), "Fevals:", std::setw(15), "Best:", std::setw(15), "Violated:", std::setw(15),
                       "Viol. Norm:", std::setw(15), "Trial:", '\n');
             }
             // 2 - Print
@@ -187,7 +187,7 @@ population mbh::evolve(population pop) const
                 cur_best_f.data() + 1 + nec, cur_best_f.data() + cur_best_f.size(), prob.get_c_tol().data() + nec);
             auto n = prob.get_nc() - c1eq.first - c1ineq.first;
             auto l = c1eq.second + c1ineq.second;
-            print(std::setw(7), prob.get_fevals() - fevals0, std::setw(15), cur_best_f[0], std::setw(15), n,
+            pagmo::print(std::setw(7), prob.get_fevals() - fevals0, std::setw(15), cur_best_f[0], std::setw(15), n,
                   std::setw(15), l, std::setw(15), i);
             if (!prob.feasibility_f(pop.get_f()[pop.best_idx()])) {
                 std::cout << " i";

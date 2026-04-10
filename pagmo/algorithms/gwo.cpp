@@ -196,10 +196,10 @@ population gwo::evolve(population pop) const
             if (gen % m_verbosity == 1u || m_verbosity == 1u) {
                 // Every 50 lines print the column names
                 if (count % 50u == 1u) {
-                    print("\n", std::setw(7), "Gen:", std::setw(15), "Alpha:", std::setw(15), "Beta:", std::setw(15),
+                    pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Alpha:", std::setw(15), "Beta:", std::setw(15),
                           "Delta:", '\n');
                 }
-                print(std::setw(7), gen, std::setw(15), alpha_score, std::setw(15), beta_score, std::setw(15),
+                pagmo::print(std::setw(7), gen, std::setw(15), alpha_score, std::setw(15), beta_score, std::setw(15),
                       delta_score, '\n');
                 ++count;
                 // Logs

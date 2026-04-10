@@ -355,11 +355,11 @@ struct ipopt_nlp final : Ipopt::TNLP {
 
                 if (!(m_objfun_counter / m_verbosity % 50u)) {
                     // Every 50 lines print the column names.
-                    print("\n", std::setw(10), "objevals:", std::setw(15), "objval:", std::setw(15),
+                    pagmo::print("\n", std::setw(10), "objevals:", std::setw(15), "objval:", std::setw(15),
                           "violated:", std::setw(15), "viol. norm:", '\n');
                 }
                 // Print to screen the log line.
-                print(std::setw(10), m_objfun_counter + 1u, std::setw(15), obj_value, std::setw(15), nv, std::setw(15),
+                pagmo::print(std::setw(10), m_objfun_counter + 1u, std::setw(15), obj_value, std::setw(15), nv, std::setw(15),
                       l, feas ? "" : " i", '\n');
                 // Record the log.
                 m_log.emplace_back(m_objfun_counter + 1u, obj_value, nv, l, feas);

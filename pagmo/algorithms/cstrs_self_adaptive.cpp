@@ -467,7 +467,7 @@ population cstrs_self_adaptive::evolve(population pop) const
                 // Prints a log line after each call to the inner algorithm
                 // 1 - Every 50 lines print the column names
                 if (count % 50u == 1u) {
-                    print("\n", std::setw(7), "Iter:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
+                    pagmo::print("\n", std::setw(7), "Iter:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
                           "Infeasibility:", std::setw(15), "Violated:", std::setw(15), "Viol. Norm:", std::setw(15),
                           "N. Feasible:", '\n');
                 }
@@ -481,7 +481,7 @@ population cstrs_self_adaptive::evolve(population pop) const
                 auto l = c1eq.second + c1ineq.second;
                 auto infeas = penalized_udp_ptr->compute_infeasibility(penalized_udp_ptr->m_f_hat_down);
                 auto n_feasible = penalized_udp_ptr->m_n_feasible;
-                print(std::setw(7), iter, std::setw(15), prob.get_fevals() - fevals0, std::setw(15), cur_best_f[0],
+                pagmo::print(std::setw(7), iter, std::setw(15), prob.get_fevals() - fevals0, std::setw(15), cur_best_f[0],
                       std::setw(15), infeas, std::setw(15), n, std::setw(15), l, std::setw(15), n_feasible);
                 if (!prob.feasibility_f(cur_best_f)) {
                     std::cout << " i";

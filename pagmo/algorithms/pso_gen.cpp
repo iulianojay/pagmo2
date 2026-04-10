@@ -503,10 +503,10 @@ population pso_gen::evolve(population pop) const
                 // We start printing
                 // Every 50 lines print the column names
                 if (count % 50u == 1u) {
-                    print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "gbest:", std::setw(15),
+                    pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "gbest:", std::setw(15),
                           "Mean Vel.:", std::setw(15), "Mean lbest:", std::setw(15), "Avg. Dist.:", '\n');
                 }
-                print(std::setw(7), gen, std::setw(15), feval_count, std::setw(15), best, std::setw(15), mean_velocity,
+                pagmo::print(std::setw(7), gen, std::setw(15), feval_count, std::setw(15), best, std::setw(15), mean_velocity,
                       std::setw(15), lb_avg, std::setw(15), avg_dist, '\n');
                 ++count;
                 // Logs

@@ -410,40 +410,40 @@ population maco::evolve(population pop) const
                 if (m_memory == false) {
                     // Every 50 lines print the column names
                     if (count_screen % 50u == 1u) {
-                        print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:");
+                        pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:");
                         for (decltype(ideal_point_sol_arch.size()) i = 0u; i < ideal_point_sol_arch.size(); ++i) {
                             if (i >= 5u) {
-                                print(std::setw(15), "... :");
+                                pagmo::print(std::setw(15), "... :");
                                 break;
                             }
-                            print(std::setw(15), "ideal" + std::to_string(i + 1u) + ":");
+                            pagmo::print(std::setw(15), "ideal" + std::to_string(i + 1u) + ":");
                         }
-                        print('\n');
+                        pagmo::print('\n');
                     }
                 } else if ((m_memory == true && m_counter == 1) || (m_memory == true && m_counter % 50u == 1u)) {
-                    print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:");
+                    pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:");
                     for (decltype(ideal_point_sol_arch.size()) i = 0u; i < ideal_point_sol_arch.size(); ++i) {
                         if (i >= 5u) {
-                            print(std::setw(15), "... :");
+                            pagmo::print(std::setw(15), "... :");
                             break;
                         }
-                        print(std::setw(15), "ideal" + std::to_string(i + 1u) + ":");
+                        pagmo::print(std::setw(15), "ideal" + std::to_string(i + 1u) + ":");
                     }
-                    print('\n');
+                    pagmo::print('\n');
                 }
                 if (m_memory == false) {
-                    print(std::setw(7), gen, std::setw(15), prob.get_fevals() - fevals0);
+                    pagmo::print(std::setw(7), gen, std::setw(15), prob.get_fevals() - fevals0);
 
                 } else {
-                    print(std::setw(7), gen, std::setw(15), prob.get_fevals());
+                    pagmo::print(std::setw(7), gen, std::setw(15), prob.get_fevals());
                 }
                 for (decltype(ideal_point_sol_arch.size()) i = 0u; i < ideal_point_sol_arch.size(); ++i) {
                     if (i >= 5u) {
                         break;
                     }
-                    print(std::setw(15), ideal_point_sol_arch[i]);
+                    pagmo::print(std::setw(15), ideal_point_sol_arch[i]);
                 }
-                print('\n');
+                pagmo::print('\n');
                 ++count_screen;
                 // Logs
                 if (m_memory == false) {

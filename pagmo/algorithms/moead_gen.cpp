@@ -185,24 +185,24 @@ population moead_gen::evolve(population pop) const
                 }
                 // Every 50 lines print the column names
                 if (count % 50u == 1u) {
-                    print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "ADF:");
+                    pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "ADF:");
                     for (decltype(ideal_point.size()) i = 0u; i < ideal_point.size(); ++i) {
                         if (i >= 5u) {
-                            print(std::setw(15), "... :");
+                            pagmo::print(std::setw(15), "... :");
                             break;
                         }
-                        print(std::setw(15), "ideal" + std::to_string(i + 1u) + ":");
+                        pagmo::print(std::setw(15), "ideal" + std::to_string(i + 1u) + ":");
                     }
-                    print('\n');
+                    pagmo::print('\n');
                 }
-                print(std::setw(7), gen, std::setw(15), prob.get_fevals() - fevals0, std::setw(15), adf);
+                pagmo::print(std::setw(7), gen, std::setw(15), prob.get_fevals() - fevals0, std::setw(15), adf);
                 for (decltype(ideal_point.size()) i = 0u; i < ideal_point.size(); ++i) {
                     if (i >= 5u) {
                         break;
                     }
-                    print(std::setw(15), ideal_point[i]);
+                    pagmo::print(std::setw(15), ideal_point[i]);
                 }
-                print('\n');
+                pagmo::print('\n');
                 ++count;
                 // Logs
                 m_log.emplace_back(gen, prob.get_fevals() - fevals0, adf, ideal_point);

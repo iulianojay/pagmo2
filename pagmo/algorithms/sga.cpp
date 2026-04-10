@@ -300,10 +300,10 @@ population sga::evolve(population pop) const
 
                 // Every 50 lines print the column names
                 if (count % 50u == 1u) {
-                    print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
+                    pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
                           "Improvement:", '\n');
                 }
-                print(std::setw(7), i, std::setw(15), prob.get_fevals() - fevals0, std::setw(15),
+                pagmo::print(std::setw(7), i, std::setw(15), prob.get_fevals() - fevals0, std::setw(15),
                       pop.get_f()[pop.best_idx()][0], std::setw(15), improvement, '\n');
                 ++count;
                 // Logs

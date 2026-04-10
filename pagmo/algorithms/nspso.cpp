@@ -164,24 +164,24 @@ population nspso::evolve(population pop) const
                 auto ideal_point_verb = ideal(m_best_fit);
                 // Every 50 lines print the column names
                 if (count_verb % 50u == 1u) {
-                    print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:");
+                    pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:");
                     for (decltype(ideal_point_verb.size()) i = 0u; i < ideal_point_verb.size(); ++i) {
                         if (i >= 5u) {
-                            print(std::setw(15), "... :");
+                            pagmo::print(std::setw(15), "... :");
                             break;
                         }
-                        print(std::setw(15), "ideal" + std::to_string(i + 1u) + ":");
+                        pagmo::print(std::setw(15), "ideal" + std::to_string(i + 1u) + ":");
                     }
-                    print('\n');
+                    pagmo::print('\n');
                 }
-                print(std::setw(7), gen, std::setw(15), prob.get_fevals());
+                pagmo::print(std::setw(7), gen, std::setw(15), prob.get_fevals());
                 for (decltype(ideal_point_verb.size()) i = 0u; i < ideal_point_verb.size(); ++i) {
                     if (i >= 5u) {
                         break;
                     }
-                    print(std::setw(15), ideal_point_verb[i]);
+                    pagmo::print(std::setw(15), ideal_point_verb[i]);
                 }
-                print('\n');
+                pagmo::print('\n');
                 ++count_verb;
                 // Logs
                 m_log.emplace_back(gen, prob.get_fevals(), ideal_point_verb);

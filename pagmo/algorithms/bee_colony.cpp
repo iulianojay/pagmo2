@@ -222,10 +222,10 @@ population bee_colony::evolve(population pop) const
                 auto best_idx = pop.best_idx();
                 // Every 50 lines print the column names
                 if (count % 50u == 1u) {
-                    print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
+                    pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
                           "Current Best:\n");
                 }
-                print(std::setw(7), gen, std::setw(15), prob.get_fevals() - fevals0, std::setw(15), pop.champion_f()[0],
+                pagmo::print(std::setw(7), gen, std::setw(15), prob.get_fevals() - fevals0, std::setw(15), pop.champion_f()[0],
                       std::setw(15), pop.get_f()[best_idx][0], '\n');
                 ++count;
                 // Logs

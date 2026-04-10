@@ -471,11 +471,11 @@ double nlopt_objfun_wrapper(unsigned dim, const double *x, double *grad, void *f
 
             if (!(f_count / verb % 50u)) {
                 // Every 50 lines print the column names.
-                print("\n", std::setw(10), "objevals:", std::setw(15), "objval:", std::setw(15),
+                pagmo::print("\n", std::setw(10), "objevals:", std::setw(15), "objval:", std::setw(15),
                       "violated:", std::setw(15), "viol. norm:", '\n');
             }
             // Print to screen the log line.
-            print(std::setw(10), f_count + 1u, std::setw(15), fitness[0], std::setw(15), nv, std::setw(15), l,
+            pagmo::print(std::setw(10), f_count + 1u, std::setw(15), fitness[0], std::setw(15), nv, std::setw(15), l,
                   feas ? "" : " i", '\n');
             // Record the log.
             log.emplace_back(f_count + 1u, fitness[0], nv, l, feas);

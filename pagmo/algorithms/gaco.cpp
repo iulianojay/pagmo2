@@ -255,17 +255,17 @@ population gaco::evolve(population pop) const
                 // Every line print the column names
                 if (m_memory == false) {
                     if (count_screen % 50u == 1u) {
-                        print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15),
+                        pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15),
                               "Best:", std::setw(15), "Kernel:", std::setw(15), "Oracle:", std::setw(15),
                               "dx:", std::setw(15), std::setw(15), "dp:", '\n');
                     }
 
                 } else if ((m_memory == true && m_counter == 1) || (m_memory == true && m_counter % 50u == 1u)) {
-                    print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
+                    pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
                           "Kernel:", std::setw(15), "Oracle:", std::setw(15), "dx:", std::setw(15), std::setw(15),
                           "dp:", '\n');
                 }
-                print(std::setw(7), gen, std::setw(15), m_fevals, std::setw(15), best_fit, std::setw(15), m_ker,
+                pagmo::print(std::setw(7), gen, std::setw(15), m_fevals, std::setw(15), best_fit, std::setw(15), m_ker,
                       std::setw(15), m_oracle, std::setw(15), dx, std::setw(15), dp, '\n');
 
                 ++count_screen;
@@ -422,11 +422,11 @@ population gaco::evolve(population pop) const
             dp = std::abs(sol_archive[m_ker - 1][0] - sol_archive[0][0]);
 
             if (m_gen == 1) {
-                print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
+                pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
                       "Kernel:", std::setw(15), "Oracle:", std::setw(15), "dx:", std::setw(15), std::setw(15),
                       "dp:", '\n');
             }
-            print(std::setw(7), m_gen, std::setw(15), m_fevals, std::setw(15), pop.champion_f()[0], std::setw(15),
+            pagmo::print(std::setw(7), m_gen, std::setw(15), m_fevals, std::setw(15), pop.champion_f()[0], std::setw(15),
                   m_ker, std::setw(15), m_oracle, std::setw(15), dx, std::setw(15), dp, '\n');
 
             // Logs

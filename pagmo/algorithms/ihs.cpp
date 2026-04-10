@@ -283,27 +283,27 @@ void ihs::log_a_line(const population &pop, unsigned &count, unsigned long long 
     // Every 50 lines print the column names (fevals, ppar, bw, dx, df, n. constraints violated, violation norm,
     // ideal [or best])
     if (count % 50u == 1u) {
-        print("\n", std::setw(7), "Fevals:", std::setw(15), "ppar:", std::setw(15), "bw:", std::setw(15),
+        pagmo::print("\n", std::setw(7), "Fevals:", std::setw(15), "ppar:", std::setw(15), "bw:", std::setw(15),
               "dx:", std::setw(15), "df:", std::setw(15), "Violated:", std::setw(15), "Viol. Norm:");
         for (decltype(ideal_point.size()) i = 0u; i < ideal_point.size(); ++i) {
             if (i >= 5u) {
-                print(std::setw(15), "... :");
+                pagmo::print(std::setw(15), "... :");
                 break;
             }
-            print(std::setw(15), "ideal" + std::to_string(i + 1u) + ":");
+            pagmo::print(std::setw(15), "ideal" + std::to_string(i + 1u) + ":");
         }
-        print('\n');
+        pagmo::print('\n');
     }
 
-    print(std::setw(7), prob.get_fevals() - fevals0, std::setw(15), ppar_cur, std::setw(15), bw_cur, std::setw(15), dx,
+    pagmo::print(std::setw(7), prob.get_fevals() - fevals0, std::setw(15), ppar_cur, std::setw(15), bw_cur, std::setw(15), dx,
           std::setw(15), df, std::setw(15), n, std::setw(15), l);
     for (decltype(ideal_point.size()) i = 0u; i < ideal_point.size(); ++i) {
         if (i >= 5u) {
             break;
         }
-        print(std::setw(15), ideal_point[i]);
+        pagmo::print(std::setw(15), ideal_point[i]);
     }
-    print('\n');
+    pagmo::print('\n');
 
     ++count;
     // Logs

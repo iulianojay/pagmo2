@@ -126,10 +126,10 @@ population sea::evolve(population pop) const
             if (m_verbosity == 1u && improvement > 0.) {
                 // Prints on screen
                 if (count % 50u == 1u) {
-                    print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
+                    pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
                           "Improvement:", std::setw(15), "Mutations:", '\n');
                 }
-                print(std::setw(7), i, std::setw(15), prob.get_fevals() - fevals0, std::setw(15),
+                pagmo::print(std::setw(7), i, std::setw(15), prob.get_fevals() - fevals0, std::setw(15),
                       pop.get_f()[best_idx][0], std::setw(15), improvement, std::setw(15), mut, '\n');
                 ++count;
                 // Logs
@@ -142,10 +142,10 @@ population sea::evolve(population pop) const
             if (i % m_verbosity == 1u) {
                 // Every 50 lines print the column names
                 if (count % 50u == 1u) {
-                    print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
+                    pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
                           "Improvement:", std::setw(15), "Mutations:", '\n');
                 }
-                print(std::setw(7), i, std::setw(15), prob.get_fevals() - fevals0, std::setw(15),
+                pagmo::print(std::setw(7), i, std::setw(15), prob.get_fevals() - fevals0, std::setw(15),
                       pop.get_f()[best_idx][0], std::setw(15), improvement, std::setw(15), mut, '\n');
                 ++count;
                 // Logs
