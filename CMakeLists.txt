@@ -1,8 +1,13 @@
 # CMake version check.
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.20)
 # NOTE: policy for using the CheckIPOSupported module:
 # https://cmake.org/cmake/help/latest/policy/CMP0069.html
 cmake_policy(SET CMP0069 NEW)
+if(POLICY CMP0167)
+    # Keep FindBoost fallback for users that do not ship
+    # BoostConfig.cmake.
+    cmake_policy(SET CMP0167 OLD)
+endif()
 
 # Set default build type to "Release".
 # NOTE: this should be done before the project command since the latter can set
