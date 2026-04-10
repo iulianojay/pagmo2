@@ -66,8 +66,9 @@ see https://www.gnu.org/licenses/. */
 // https://www.boost.org/doc/libs/1_70_0/libs/serialization/doc/special.html#objecttracking
 // https://www.boost.org/doc/libs/1_70_0/libs/serialization/doc/traits.html#level
 
-// Declares the compile-time cereal name binding and polymorphic caster relation.
-// Safe to place in headers — creates no static initializer objects.
+// Declares the compile-time cereal name binding, polymorphic caster relation, and
+// archive binding. CEREAL_BIND_TO_ARCHIVES is included here so every DSO that
+// includes this header self-registers the type — required for macOS two-level namespace.
 #define PAGMO_S11N_PROBLEM_EXPORT_KEY(prob)                                                                            \
     namespace cereal                                                                                                   \
     {                                                                                                                  \
@@ -82,11 +83,11 @@ see https://www.gnu.org/licenses/. */
     };                                                                                                                 \
     }                                                                                                                  \
     } /* end namespaces */                                                                                             \
-    CEREAL_REGISTER_POLYMORPHIC_RELATION(pagmo::detail::prob_inner_base, pagmo::detail::prob_inner<prob>)
+    CEREAL_REGISTER_POLYMORPHIC_RELATION(pagmo::detail::prob_inner_base, pagmo::detail::prob_inner<prob>)              \
+    CEREAL_BIND_TO_ARCHIVES(pagmo::detail::prob_inner<prob>)
 
-// Creates the static registration initializer. Must be used in ONE .cpp only
-// (pagmo/s11n_registrations.cpp) to avoid duplicate StaticObject singletons on macOS.
-#define PAGMO_S11N_PROBLEM_IMPLEMENT(prob) CEREAL_BIND_TO_ARCHIVES(pagmo::detail::prob_inner<prob>)
+// Also called from pagmo/s11n_registrations.cpp (idempotent — safe to call multiple times).
+#define PAGMO_S11N_PROBLEM_IMPLEMENT(prob)
 
 #define PAGMO_S11N_PROBLEM_EXPORT(prob)                                                                                \
     PAGMO_S11N_PROBLEM_EXPORT_KEY(prob)                                                                                \

@@ -51,8 +51,9 @@ see https://www.gnu.org/licenses/. */
 #include <pagmo/threading.hpp>
 #include <pagmo/type_traits.hpp>
 
-// Declares the compile-time cereal name binding and polymorphic caster relation.
-// Safe to place in headers — creates no static initializer objects.
+// Declares the compile-time cereal name binding, polymorphic caster relation, and
+// archive binding. CEREAL_BIND_TO_ARCHIVES is included here so every DSO that
+// includes this header self-registers the type — required for macOS two-level namespace.
 #define PAGMO_S11N_ALGORITHM_EXPORT_KEY(algo)                                                                          \
     namespace cereal                                                                                                   \
     {                                                                                                                  \
@@ -67,11 +68,11 @@ see https://www.gnu.org/licenses/. */
     };                                                                                                                 \
     }                                                                                                                  \
     } /* end namespaces */                                                                                             \
-    CEREAL_REGISTER_POLYMORPHIC_RELATION(pagmo::detail::algo_inner_base, pagmo::detail::algo_inner<algo>)
+    CEREAL_REGISTER_POLYMORPHIC_RELATION(pagmo::detail::algo_inner_base, pagmo::detail::algo_inner<algo>)              \
+    CEREAL_BIND_TO_ARCHIVES(pagmo::detail::algo_inner<algo>)
 
-// Creates the static registration initializer. Must be used in ONE .cpp only
-// (pagmo/s11n_registrations.cpp) to avoid duplicate StaticObject singletons on macOS.
-#define PAGMO_S11N_ALGORITHM_IMPLEMENT(algo) CEREAL_BIND_TO_ARCHIVES(pagmo::detail::algo_inner<algo>)
+// Also called from pagmo/s11n_registrations.cpp (idempotent — safe to call multiple times).
+#define PAGMO_S11N_ALGORITHM_IMPLEMENT(algo)
 
 #define PAGMO_S11N_ALGORITHM_EXPORT(algo)                                                                              \
     PAGMO_S11N_ALGORITHM_EXPORT_KEY(algo)                                                                              \

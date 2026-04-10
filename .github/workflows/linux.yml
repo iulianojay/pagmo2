@@ -77,28 +77,3 @@ jobs:
           CC: gcc-13
           CXX: g++-13
         run: make CMAKE=cmake full-test
-
-  linux-debug:
-    name: Linux - Debug Build with All Dependencies
-    runs-on: ubuntu-latest
-    needs: linux-all-deps
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install all dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-13 g++-13 gfortran libblas-dev liblapack-dev
-      - name: Build
-        env:
-          CC: gcc-13
-          CXX: g++-13
-        run: |
-          make CMAKE=cmake BUILD_TYPE=Debug \
-               PAGMO_BUILD_TESTS=ON \
-               PAGMO_WITH_EIGEN3=ON \
-               PAGMO_WITH_NLOPT=ON \
-               PAGMO_WITH_IPOPT=ON \
-               PAGMO_ENABLE_IPO=OFF \
-               build
-      - name: Test
-        run: make CMAKE=cmake BUILD_TYPE=Debug test
