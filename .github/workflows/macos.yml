@@ -53,7 +53,7 @@ jobs:
   macos-all-deps:
     name: macOS - All Dependencies
     runs-on: macos-latest
-    needs: [macos-eigen3, macos-nlopt, macos-ipopt]
+    needs: [macos-eigen3, macos-nlopt]
     steps:
       - uses: actions/checkout@v4
       - name: Install ipopt build dependencies
