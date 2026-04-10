@@ -54,9 +54,8 @@ private:
     // Object serialization
     friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &ar)
+    void serialize(Archive &)
     {
-
     }
 };
 

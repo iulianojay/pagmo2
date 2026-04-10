@@ -20,9 +20,11 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRE
 
 # On Windows (MSVC multi-config), ensure ALL DLLs (pagmo + TBB + optional deps)
 # land in the same per-config directory so test executables can find them.
+# Using $<CONFIG> matches the per-config subdirectory that MSVC creates by default
+# (e.g. build/release/Release) so the PATH set in CI already covers all DLLs.
 # This must be set before CPM/subdirectory includes so it is inherited by all targets.
 if(WIN32)
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIG>")
 endif()
 
 # Include CPM for modern dependency management
@@ -206,9 +208,6 @@ include(cmake/find_or_build_graaf.cmake)
 
 # Google Test dependency
 include(cmake/find_or_build_gtest.cmake)
-
-# restore the current directory's old `COMPILE_OPTIONS`
-set_directory_properties(PROPERTIES COMPILE_OPTIONS "${old_compile_options}")
 
 # List of source files.
 set(PAGMO_SRC_FILES
@@ -404,14 +403,31 @@ target_link_libraries(pagmo PUBLIC Threads::Threads)
 # all uses of TBB are limited to the .cpp files,
 # thus fully encapsulated in the pagmo library.
 target_link_libraries(pagmo PRIVATE pagmo_tbb_wrapper)
+# Silence warnings from TBB headers by treating them as system includes.
+get_target_property(_TBB_INCDIRS pagmo_tbb_wrapper INTERFACE_INCLUDE_DIRECTORIES)
+if(_TBB_INCDIRS)
+    target_include_directories(pagmo SYSTEM PRIVATE ${_TBB_INCDIRS})
+endif()
+unset(_TBB_INCDIRS)
 
 # Cereal serialization library for the main library
 if(TARGET cereal::cereal)
     target_link_libraries(pagmo PRIVATE cereal::cereal)
     message(STATUS "Linked with cereal::cereal (private)")
+    # Silence warnings from cereal headers by treating them as system includes.
+    get_target_property(_CEREAL_INCDIRS cereal::cereal INTERFACE_INCLUDE_DIRECTORIES)
+    if(_CEREAL_INCDIRS)
+        target_include_directories(pagmo SYSTEM PRIVATE ${_CEREAL_INCDIRS})
+    endif()
+    unset(_CEREAL_INCDIRS)
 elseif(TARGET cereal)
     target_link_libraries(pagmo PRIVATE cereal)
     message(STATUS "Linked with cereal (private)")
+    get_target_property(_CEREAL_INCDIRS cereal INTERFACE_INCLUDE_DIRECTORIES)
+    if(_CEREAL_INCDIRS)
+        target_include_directories(pagmo SYSTEM PRIVATE ${_CEREAL_INCDIRS})
+    endif()
+    unset(_CEREAL_INCDIRS)
 endif()
 
 # Link Graaf graph library (header-only, replaces Boost Graph Library).
@@ -457,6 +473,9 @@ if(PAGMO_WITH_IPOPT)
     message(STATUS "Linked with Ipopt::Ipopt target")
     set(PAGMO_ENABLE_IPOPT "#define PAGMO_WITH_IPOPT")
 endif()
+
+# restore the current directory's old `COMPILE_OPTIONS`
+set_directory_properties(PROPERTIES COMPILE_OPTIONS "${old_compile_options}")
 
 # Configure config.hpp.
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/config.hpp.in" "${CMAKE_CURRENT_BINARY_DIR}/include/pagmo/config.hpp" @ONLY)
