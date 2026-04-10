@@ -28,6 +28,7 @@ see https://www.gnu.org/licenses/. */
 
 #include <pagmo/config.hpp>
 
+#include <any>
 #include <cassert>
 #include <chrono>
 #include <exception>
@@ -51,8 +52,6 @@ see https://www.gnu.org/licenses/. */
 #include <pthread.h>
 
 #endif
-
-#include <boost/any.hpp>
 
 #include <tbb/concurrent_queue.h>
 
@@ -150,17 +149,17 @@ namespace detail
 namespace
 {
 
-boost::any default_wait_raii_getter()
+std::any default_wait_raii_getter()
 {
-    return boost::any{};
+    return std::any{};
 }
 
 } // namespace
 
-// NOTE: the default implementation just returns a defected boost::any, whose ctor and dtor
+// NOTE: the default implementation just returns a defected std::any, whose ctor and dtor
 // will have no effect.
 /// @cond
-std::function<boost::any()> wait_raii_getter = &default_wait_raii_getter;
+std::function<std::any()> wait_raii_getter = &default_wait_raii_getter;
 /// @endcond
 
 namespace
@@ -176,7 +175,7 @@ void default_island_factory(const algorithm &algo, const population &pop, std::u
 #if defined(PAGMO_WITH_FORK_ISLAND)
     if (algo.get_thread_safety() < thread_safety::basic
         || pop.get_problem().get_thread_safety() < thread_safety::basic) {
-        ptr = std::make_unique<isl_inner<fork_island>>();
+        ptr = std::make_unique<isl_inner<pagmo::fork_island>>();
         return;
     }
 #endif

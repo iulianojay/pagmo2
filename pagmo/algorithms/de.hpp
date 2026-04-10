@@ -185,9 +185,13 @@ public:
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned);
+    void serialize(Archive &ar)
+    {
+
+        detail::archive(ar, m_gen, m_F, m_CR, m_variant, m_Ftol, m_xtol, m_e, m_seed, m_verbosity, m_log);
+    }
 
     unsigned m_gen;
     double m_F;

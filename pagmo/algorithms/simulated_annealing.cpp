@@ -56,29 +56,29 @@ simulated_annealing::simulated_annealing(double Ts, double Tf, unsigned n_T_adj,
       m_start_range(start_range), m_e(seed), m_seed(seed), m_verbosity(0u), m_log()
 {
     if (Ts <= 0. || !std::isfinite(Ts)) {
-        pagmo_throw(std::invalid_argument, "The starting temperature must be finite and positive, while a value of "
+        pagmo_throw(invalid_parameter_error, "The starting temperature must be finite and positive, while a value of "
                                                + std::to_string(Ts) + " was detected.");
     }
     if (Tf <= 0. || !std::isfinite(Tf)) {
-        pagmo_throw(std::invalid_argument, "The final temperature must be finite and positive, while a value of "
+        pagmo_throw(invalid_parameter_error, "The final temperature must be finite and positive, while a value of "
                                                + std::to_string(Tf) + " was detected.");
     }
     if (Tf > Ts) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "The final temperature must be smaller than the initial temperature, while a value of "
                         + std::to_string(Tf) + " >= " + std::to_string(Ts) + " was detected.");
     }
     if (start_range <= 0. || start_range > 1. || !std::isfinite(start_range)) {
-        pagmo_throw(std::invalid_argument, "The start range must be in the (0, 1] range, while a value of "
+        pagmo_throw(invalid_parameter_error, "The start range must be in the (0, 1] range, while a value of "
                                                + std::to_string(start_range) + " was detected.");
     }
     if (n_T_adj == 0u) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "The number of temperature adjustments must be strictly positive, while a value of "
                         + std::to_string(n_T_adj) + " was detected.");
     }
     if (n_range_adj == 0u) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "The number of range adjustments must be strictly positive, while a value of "
                         + std::to_string(n_range_adj) + " was detected.");
     }
@@ -106,19 +106,19 @@ population simulated_annealing::evolve(population pop) const
     // PREAMBLE-------------------------------------------------------------------------------------------------
     // We start by checking that the problem is suitable for this particular algorithm.
     if (prob.get_nc() != 0u) {
-        pagmo_throw(std::invalid_argument, "Non linear constraints detected in " + prob.get_name() + " instance. "
+        pagmo_throw(incompatible_problem_error, "Non linear constraints detected in " + prob.get_name() + " instance. "
                                                + get_name() + " cannot deal with them");
     }
     if (prob.get_nf() != 1u) {
-        pagmo_throw(std::invalid_argument, "Multiple objectives detected in " + prob.get_name() + " instance. "
+        pagmo_throw(incompatible_problem_error, "Multiple objectives detected in " + prob.get_name() + " instance. "
                                                + get_name() + " cannot deal with them");
     }
     if (prob.is_stochastic()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(incompatible_problem_error,
                     "The problem appears to be stochastic " + get_name() + " cannot deal with it");
     }
     if (!pop.size()) {
-        pagmo_throw(std::invalid_argument, get_name() + " does not work on an empty population");
+        pagmo_throw(insufficient_population_error, get_name() + " does not work on an empty population");
     }
     // ---------------------------------------------------------------------------------------------------------
 
@@ -191,13 +191,13 @@ population simulated_annealing::evolve(population pop) const
                         if (fevals_count >= (count - 1u) * m_verbosity) {
                             // 1 - Every 50 lines print the column names
                             if (count % 50u == 1u) {
-                                print("\n", std::setw(7), "Fevals:", std::setw(15), "Best:", std::setw(15),
+                                pagmo::print("\n", std::setw(7), "Fevals:", std::setw(15), "Best:", std::setw(15),
                                       "Current:", std::setw(15), "Mean range:", std::setw(15), "Temperature:", '\n');
                             }
                             auto avg_range
                                 = std::accumulate(step.begin(), step.end(), 0.) / static_cast<double>(step.size());
                             // 2 - Print
-                            print(std::setw(7), fevals_count, std::setw(15), best_f[0], std::setw(15), fOLD[0],
+                            pagmo::print(std::setw(7), fevals_count, std::setw(15), best_f[0], std::setw(15), fOLD[0],
                                   std::setw(15), avg_range, std::setw(15), currentT);
                             ++count;
                             std::cout << std::endl; // we flush here as we want the user to read in real time ...
@@ -262,14 +262,6 @@ std::string simulated_annealing::get_extra_info() const
     stream(ss, "\n\tSeed: ", m_seed);
     stream(ss, "\n\tVerbosity: ", m_verbosity);
     return ss.str();
-}
-
-// Object serialization
-template <typename Archive>
-void simulated_annealing::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, boost::serialization::base_object<not_population_based>(*this), m_Ts, m_Tf, m_n_T_adj,
-                    m_n_range_adj, m_bin_size, m_start_range, m_e, m_seed, m_verbosity, m_log);
 }
 
 } // namespace pagmo

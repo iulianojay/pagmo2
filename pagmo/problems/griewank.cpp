@@ -44,7 +44,7 @@ namespace pagmo
 griewank::griewank(unsigned dim) : m_dim(dim)
 {
     if (dim < 1u) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(problem_config_error,
                     "Griewank Function must have minimum 1 dimension, " + std::to_string(dim) + " requested");
     }
 }
@@ -95,13 +95,6 @@ std::pair<vector_double, vector_double> griewank::get_bounds() const
 vector_double griewank::best_known() const
 {
     return vector_double(m_dim, 0.);
-}
-
-// Object serialization
-template <typename Archive>
-void griewank::serialize(Archive &ar, unsigned)
-{
-    ar & m_dim;
 }
 
 } // namespace pagmo

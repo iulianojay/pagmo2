@@ -128,9 +128,13 @@ public:
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned);
+    void serialize(Archive &ar)
+    {
+
+        detail::archive(ar, m_prob_id, m_dim, m_fdim, m_alpha);
+    }
 
     // Convergence metric for a dv (0 = converged to the optimal front)
     PAGMO_DLL_LOCAL double g_func(const vector_double &) const;

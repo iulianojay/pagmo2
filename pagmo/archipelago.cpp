@@ -43,15 +43,13 @@ see https://www.gnu.org/licenses/. */
 #include <utility>
 #include <vector>
 
-#include <boost/numeric/conversion/cast.hpp>
-
 #include <pagmo/archipelago.hpp>
 #include <pagmo/exceptions.hpp>
 #include <pagmo/io.hpp>
 #include <pagmo/island.hpp>
 #include <pagmo/topology.hpp>
 #include <pagmo/types.hpp>
-
+#include <pagmo/utils/cast.hpp>
 // MINGW-specific warnings.
 #if defined(__GNUC__) && defined(__MINGW32__)
 #pragma GCC diagnostic push
@@ -285,8 +283,8 @@ archipelago::~archipelago()
 island &archipelago::operator[](size_type i)
 {
     if (i >= size()) {
-        pagmo_throw(std::out_of_range, "cannot access the island at index " + std::to_string(i)
-                                           + ": the archipelago has a size of only " + std::to_string(size()));
+        pagmo_throw(index_error, "cannot access the island at index " + std::to_string(i)
+                                     + ": the archipelago has a size of only " + std::to_string(size()));
     }
     return *m_islands[i];
 }
@@ -307,8 +305,8 @@ island &archipelago::operator[](size_type i)
 const island &archipelago::operator[](size_type i) const
 {
     if (i >= size()) {
-        pagmo_throw(std::out_of_range, "cannot access the island at index " + std::to_string(i)
-                                           + ": the archipelago has a size of only " + std::to_string(size()));
+        pagmo_throw(index_error, "cannot access the island at index " + std::to_string(i)
+                                     + ": the archipelago has a size of only " + std::to_string(size()));
     }
     return *m_islands[i];
 }
@@ -480,7 +478,7 @@ void archipelago::push_back_impl(std::unique_ptr<island> &&new_island)
     // Try to make space for the new island in the islands vector.
     // LCOV_EXCL_START
     if (m_islands.size() == std::numeric_limits<decltype(m_islands.size())>::max()) {
-        pagmo_throw(std::overflow_error, "cannot add a new island to an archipelago due to an overflow condition");
+        pagmo_throw(size_limit_error, "cannot add a new island to an archipelago due to an overflow condition");
     }
     // LCOV_EXCL_STOP
     m_islands.reserve(m_islands.size() + 1u);
@@ -488,7 +486,7 @@ void archipelago::push_back_impl(std::unique_ptr<island> &&new_island)
     // Try to make space for the new migrants entry.
     // LCOV_EXCL_START
     if (m_migrants.size() == std::numeric_limits<decltype(m_migrants.size())>::max()) {
-        pagmo_throw(std::overflow_error, "cannot add a new island to an archipelago due to an overflow condition");
+        pagmo_throw(size_limit_error, "cannot add a new island to an archipelago due to an overflow condition");
     }
     // LCOV_EXCL_STOP
     {
@@ -537,7 +535,7 @@ archipelago::size_type archipelago::get_island_idx(const island &isl) const
     std::lock_guard<std::mutex> lock(m_idx_map_mutex);
     const auto ret = m_idx_map.find(&isl);
     if (ret == m_idx_map.end()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(index_error,
                     "the index of an island in an archipelago was requested, but the island is not in the archipelago");
     }
     return ret->second;
@@ -660,9 +658,9 @@ individuals_group_t archipelago::extract_migrants(size_type i)
     std::lock_guard<std::mutex> lock(m_migrants_mutex);
 
     if (i >= m_migrants.size()) {
-        pagmo_throw(std::out_of_range, "cannot access the migrants of the island at index " + std::to_string(i)
-                                           + ": the migrants database has a size of only "
-                                           + std::to_string(m_migrants.size()));
+        pagmo_throw(index_error, "cannot access the migrants of the island at index " + std::to_string(i)
+                                     + ": the migrants database has a size of only "
+                                     + std::to_string(m_migrants.size()));
     }
 
     // Move-construct the return value.
@@ -684,9 +682,9 @@ individuals_group_t archipelago::get_migrants(size_type i) const
     std::lock_guard<std::mutex> lock(m_migrants_mutex);
 
     if (i >= m_migrants.size()) {
-        pagmo_throw(std::out_of_range, "cannot access the migrants of the island at index " + std::to_string(i)
-                                           + ": the migrants database has a size of only "
-                                           + std::to_string(m_migrants.size()));
+        pagmo_throw(index_error, "cannot access the migrants of the island at index " + std::to_string(i)
+                                     + ": the migrants database has a size of only "
+                                     + std::to_string(m_migrants.size()));
     }
 
     // Return a copy of the migrants for island i.
@@ -699,9 +697,9 @@ void archipelago::set_migrants(size_type i, individuals_group_t &&inds)
     std::lock_guard<std::mutex> lock(m_migrants_mutex);
 
     if (i >= m_migrants.size()) {
-        pagmo_throw(std::out_of_range, "cannot access the migrants of the island at index " + std::to_string(i)
-                                           + ": the migrants database has a size of only "
-                                           + std::to_string(m_migrants.size()));
+        pagmo_throw(index_error, "cannot access the migrants of the island at index " + std::to_string(i)
+                                     + ": the migrants database has a size of only "
+                                     + std::to_string(m_migrants.size()));
     }
 
     // Move in the new individuals.
@@ -767,10 +765,10 @@ std::pair<std::vector<archipelago::size_type>, vector_double> get_island_connect
     auto tmp = topo.get_connections(i);
 
     std::pair<std::vector<archipelago::size_type>, vector_double> retval;
-    retval.first.reserve(boost::numeric_cast<decltype(retval.first.size())>(tmp.first.size()));
+    retval.first.reserve(numeric_cast<decltype(retval.first.size())>(tmp.first.size()));
 
     std::transform(tmp.first.begin(), tmp.first.end(), std::back_inserter(retval.first),
-                   [](const std::size_t &n) { return boost::numeric_cast<archipelago::size_type>(n); });
+                   [](const std::size_t &n) { return numeric_cast<archipelago::size_type>(n); });
     retval.second = std::move(tmp.second);
 
     return retval;
@@ -794,7 +792,7 @@ std::pair<std::vector<archipelago::size_type>, vector_double> archipelago::get_i
     // need to go through a conversion. We do a bit of TMP to avoid
     // the conversion in the likely case that std::size_t and size_type
     // are the same type.
-    return detail::get_island_connections_impl(m_topology, boost::numeric_cast<std::size_t>(i),
+    return detail::get_island_connections_impl(m_topology, numeric_cast<std::size_t>(i),
                                                std::is_same<std::size_t, size_type>{});
 }
 

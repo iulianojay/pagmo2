@@ -178,7 +178,7 @@ const std::vector<vector_double> best_known = {
 cec2006::cec2006(unsigned prob_id) : m_prob_id(prob_id)
 {
     if (prob_id < 1u || prob_id > 24u) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(problem_config_error,
                     "Error: CEC2006 Test functions are only defined for prob_id in [1, 24], a prob_id of "
                         + std::to_string(prob_id) + " was detected.");
     }
@@ -252,13 +252,6 @@ std::string cec2006::get_name() const
     std::string retval("CEC2006 - g");
     retval.append(std::to_string(m_prob_id));
     return retval;
-}
-
-// Object serialization
-template <typename Archive>
-void cec2006::serialize(Archive &ar, unsigned)
-{
-    ar & m_prob_id;
 }
 
 // Pointers to member functions are used

@@ -88,9 +88,13 @@ public:
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned);
+    void serialize(Archive &ar)
+    {
+
+        detail::archive(ar, m_prob_id, m_rotation_matrix, m_origin_shift, m_y, m_z);
+    }
 
     PAGMO_DLL_LOCAL void sphere_func(const double *x, double *f, const unsigned nx, const double *Os, const double *Mr,
                                      int r_flag) const; /* Sphere */

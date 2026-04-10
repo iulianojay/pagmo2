@@ -26,9 +26,8 @@ You should have received copies of the GNU General Public License and the
 GNU Lesser General Public License along with the PaGMO library.  If not,
 see https://www.gnu.org/licenses/. */
 
+#include <any>
 #include <functional>
-
-#include <boost/any.hpp>
 
 #include <pagmo/detail/gte_getter.hpp>
 
@@ -41,15 +40,15 @@ namespace detail
 namespace
 {
 
-boost::any default_gte_getter()
+std::any default_gte_getter()
 {
-    return boost::any{};
+    return std::any{};
 }
 
 } // namespace
 
 /// @cond
-std::function<boost::any()> gte_getter = &default_gte_getter;
+std::function<std::any()> gte_getter = &default_gte_getter;
 /// @endcond
 
 } // namespace detail

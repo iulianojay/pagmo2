@@ -102,14 +102,14 @@ void thread_island::run_evolve(island &isl) const
 
             // Check the thread safety levels.
             if (tmp_algo.get_thread_safety() < thread_safety::basic) {
-                pagmo_throw(std::invalid_argument,
+                pagmo_throw(incompatible_problem_error,
                             "the 'thread_island' UDI requires an algorithm providing at least the 'basic' "
                             "thread safety guarantee, but an algorithm of type '"
                                 + tmp_algo.get_name() + "' does not");
             }
 
             if (tmp_pop.get_problem().get_thread_safety() < thread_safety::basic) {
-                pagmo_throw(std::invalid_argument,
+                pagmo_throw(incompatible_problem_error,
                             "the 'thread_island' UDI requires a problem providing at least the 'basic' "
                             "thread safety guarantee, but a problem of type '"
                                 + tmp_pop.get_problem().get_name() + "' does not");
@@ -153,29 +153,6 @@ void thread_island::run_evolve(island &isl) const
         }
     } else {
         impl();
-    }
-}
-
-// Serialization support.
-template <typename Archive>
-void thread_island::save(Archive &ar, unsigned) const
-{
-    ar << m_use_pool;
-}
-
-template <typename Archive>
-void thread_island::load(Archive &ar, unsigned version)
-{
-    if (version > 0u) {
-        ar >> m_use_pool;
-    } else {
-        // LCOV_EXCL_START
-        // NOTE: if loading from version 0,
-        // set the flag to false (as the version 0
-        // of thread_island had no support for
-        // a thread pool).
-        m_use_pool = false;
-        // LCOV_EXCL_STOP
     }
 }
 

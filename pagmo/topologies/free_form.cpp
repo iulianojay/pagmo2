@@ -31,8 +31,6 @@ see https://www.gnu.org/licenses/. */
 #include <string>
 #include <utility>
 
-// #include <boost/graph/adjacency_list.hpp>
-
 #include <pagmo/exceptions.hpp>
 #include <pagmo/s11n.hpp>
 #include <pagmo/topologies/base_bgl_topology.hpp>
@@ -46,16 +44,14 @@ free_form::free_form() = default;
 free_form::free_form(const free_form &) = default;
 free_form::free_form(free_form &&) noexcept = default;
 
-free_form::free_form(bgl_graph_t g)
+free_form::free_form(graph_t g)
 {
     // NOTE: verify the values of the weights,
-    // as the base BGL topology maintains
+    // as the base graph topology maintains
     // correct weights as a class invariant.
-    for (auto erange = boost::edges(g); erange.first != erange.second; ++erange.first) {
-        const auto w = g[*erange.first];
-
+    for (const auto &[edge_id, w] : g.get_edges()) {
         if (!std::isfinite(w) || w < 0. || w > 1.) {
-            pagmo_throw(std::invalid_argument,
+            pagmo_throw(invalid_value_error,
                         "In the constructor of a free_form topology from a graph object, an invalid edge weight of "
                             + std::to_string(w) + " was detected (the weight must be in the [0., 1.] range)");
         }
@@ -64,14 +60,7 @@ free_form::free_form(bgl_graph_t g)
     set_graph(std::move(g));
 }
 
-free_form::free_form(const topology &t) : free_form(t.to_bgl()) {}
-
-// Serialization.
-template <typename Archive>
-void free_form::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, boost::serialization::base_object<base_bgl_topology>(*this));
-}
+free_form::free_form(const topology &t) : free_form(t.to_graph()) {}
 
 // Add vertex.
 void free_form::push_back()

@@ -29,11 +29,10 @@ see https://www.gnu.org/licenses/. */
 #ifndef PAGMO_ALGORITHMS_NSGA2_HPP
 #define PAGMO_ALGORITHMS_NSGA2_HPP
 
+#include <optional>
 #include <string>
 #include <tuple>
 #include <vector>
-
-#include <boost/optional.hpp>
 
 #include <pagmo/algorithm.hpp>
 #include <pagmo/bfe.hpp>
@@ -170,9 +169,13 @@ public:
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned);
+    void serialize(Archive &ar)
+    {
+
+        detail::archive(ar, m_gen, m_cr, m_eta_c, m_m, m_eta_m, m_e, m_seed, m_verbosity, m_log, m_bfe);
+    }
 
     unsigned m_gen;
     double m_cr;
@@ -183,7 +186,7 @@ private:
     unsigned m_seed;
     unsigned m_verbosity;
     mutable log_type m_log;
-    boost::optional<bfe> m_bfe;
+    std::optional<bfe> m_bfe;
 };
 
 } // namespace pagmo

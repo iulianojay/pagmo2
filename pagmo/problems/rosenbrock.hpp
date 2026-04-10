@@ -91,10 +91,14 @@ struct PAGMO_DLL_PUBLIC rosenbrock {
     vector_double::size_type m_dim;
 
 private:
-    friend class boost::serialization::access;
+    friend class cereal::access;
     // Object serialization
     template <typename Archive>
-    void serialize(Archive &, unsigned);
+    void serialize(Archive &ar)
+    {
+
+        ar & m_dim;
+    }
 };
 
 } // namespace pagmo

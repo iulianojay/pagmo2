@@ -94,7 +94,7 @@ void s_policy::verify_select_input(const individuals_group_t &inds, const vector
 {
     // 1 - verify that the elements of inds all have the same size.
     if (std::get<0>(inds).size() != std::get<1>(inds).size() || std::get<0>(inds).size() != std::get<2>(inds).size()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(policy_config_error,
                     "an invalid group of individuals was passed to a selection policy of type '" + get_name()
                         + "': the sets of individuals IDs, decision vectors and fitness vectors "
                           "must all have the same sizes, but instead their sizes are "
@@ -105,38 +105,38 @@ void s_policy::verify_select_input(const individuals_group_t &inds, const vector
     // 2 - make sure nx, nix, nobj, nec, nic are sane and consistent.
     // Check that the problem dimension is not zero.
     if (!nx) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(policy_config_error,
                     "a problem dimension of zero was passed to a selection policy of type '" + get_name() + "'");
     }
     // Verify that it is consistent with nix.
     if (nix > nx) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(policy_config_error,
                     "the integer dimension (" + std::to_string(nix) + ") passed to a selection policy of type '"
                         + get_name() + "' is larger than the supplied problem dimension (" + std::to_string(nx) + ")");
     }
     if (!nobj) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(policy_config_error,
                     "an invalid number of objectives (0) was passed to a selection policy of type '" + get_name()
                         + "'");
     }
     if (nobj > std::numeric_limits<vector_double::size_type>::max() / 3u) {
-        pagmo_throw(std::invalid_argument, "the number of objectives (" + std::to_string(nobj)
+        pagmo_throw(policy_config_error, "the number of objectives (" + std::to_string(nobj)
                                                + ") passed to a selection policy of type '" + get_name()
                                                + "' is too large");
     }
     if (nec > std::numeric_limits<vector_double::size_type>::max() / 3u) {
-        pagmo_throw(std::invalid_argument, "the number of equality constraints (" + std::to_string(nec)
+        pagmo_throw(policy_config_error, "the number of equality constraints (" + std::to_string(nec)
                                                + ") passed to a selection policy of type '" + get_name()
                                                + "' is too large");
     }
     if (nic > std::numeric_limits<vector_double::size_type>::max() / 3u) {
-        pagmo_throw(std::invalid_argument, "the number of inequality constraints (" + std::to_string(nic)
+        pagmo_throw(policy_config_error, "the number of inequality constraints (" + std::to_string(nic)
                                                + ") passed to a selection policy of type '" + get_name()
                                                + "' is too large");
     }
     // Verify that the tol vector size is correct.
     if (tol.size() != nec + nic) {
-        pagmo_throw(std::invalid_argument, "the vector of tolerances passed to a selection policy of type '"
+        pagmo_throw(policy_config_error, "the vector of tolerances passed to a selection policy of type '"
                                                + get_name() + "' has a dimension (" + std::to_string(tol.size())
                                                + ") which is inconsistent with the total number of constraints ("
                                                + std::to_string(nec + nic) + ")");
@@ -149,11 +149,11 @@ void s_policy::verify_select_input(const individuals_group_t &inds, const vector
     auto fv_checker = [nf](const vector_double &fv) { return fv.size() != nf; };
 
     if (std::any_of(std::get<1>(inds).begin(), std::get<1>(inds).end(), dv_checker)) {
-        pagmo_throw(std::invalid_argument, "not all the individuals passed to a selection policy of type '" + get_name()
+        pagmo_throw(policy_config_error, "not all the individuals passed to a selection policy of type '" + get_name()
                                                + "' have the expected dimension (" + std::to_string(nx) + ")");
     }
     if (std::any_of(std::get<2>(inds).begin(), std::get<2>(inds).end(), fv_checker)) {
-        pagmo_throw(std::invalid_argument, "not all the individuals passed to a selection policy of type '" + get_name()
+        pagmo_throw(policy_config_error, "not all the individuals passed to a selection policy of type '" + get_name()
                                                + "' have the expected fitness dimension (" + std::to_string(nf) + ")");
     }
 }
@@ -165,7 +165,7 @@ void s_policy::verify_select_output(const individuals_group_t &retval, vector_do
     // 1 - verify that the elements of retval all have the same size.
     if (std::get<0>(retval).size() != std::get<1>(retval).size()
         || std::get<0>(retval).size() != std::get<2>(retval).size()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(policy_config_error,
                     "an invalid group of individuals was returned by a selection policy of type '" + get_name()
                         + "': the sets of individuals IDs, decision vectors and fitness vectors "
                           "must all have the same sizes, but instead their sizes are "
@@ -177,13 +177,13 @@ void s_policy::verify_select_output(const individuals_group_t &retval, vector_do
     // the expected dimensions.
     if (std::any_of(std::get<1>(retval).begin(), std::get<1>(retval).end(),
                     [nx](const vector_double &dv) { return dv.size() != nx; })) {
-        pagmo_throw(std::invalid_argument, "not all the individuals returned by a selection policy of type '"
+        pagmo_throw(policy_config_error, "not all the individuals returned by a selection policy of type '"
                                                + get_name() + "' have the expected dimension (" + std::to_string(nx)
                                                + ")");
     }
     if (std::any_of(std::get<2>(retval).begin(), std::get<2>(retval).end(),
                     [nf](const vector_double &fv) { return fv.size() != nf; })) {
-        pagmo_throw(std::invalid_argument, "not all the individuals returned by a selection policy of type '"
+        pagmo_throw(policy_config_error, "not all the individuals returned by a selection policy of type '"
                                                + get_name() + "' have the expected fitness dimension ("
                                                + std::to_string(nf) + ")");
     }

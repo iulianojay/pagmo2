@@ -82,8 +82,7 @@ vector_double thread_bfe::operator()(problem p, const vector_double &dvs) const
     // Guard against overflow.
     // LCOV_EXCL_START
     if (n_dvs > std::numeric_limits<vector_double::size_type>::max() / f_dim) {
-        pagmo_throw(std::overflow_error,
-                    "Overflow detected in the computation of the size of the output of a thread_bfe");
+        pagmo_throw(size_limit_error, "Overflow detected in the computation of the size of the output of a thread_bfe");
     }
     // LCOV_EXCL_STOP
     vector_double retval(n_dvs * f_dim);
@@ -136,17 +135,11 @@ vector_double thread_bfe::operator()(problem p, const vector_double &dvs) const
             range_evaluator(p, range.begin(), range.end());
         });
     } else {
-        pagmo_throw(std::invalid_argument, "Cannot use a thread_bfe on the problem '" + p.get_name()
-                                               + "', which does not provide the required level of thread safety");
+        pagmo_throw(batch_eval_error, "Cannot use a thread_bfe on the problem '" + p.get_name()
+                                          + "', which does not provide the required level of thread safety");
     }
 
     return retval;
-}
-
-// Serialization support.
-template <typename Archive>
-void thread_bfe::serialize(Archive &, unsigned)
-{
 }
 
 } // namespace pagmo

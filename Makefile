@@ -6,11 +6,23 @@
 # Scientific library for massively parallel optimization
 
 # Build configuration
-BUILD_DIR = build
-CMAKE = $(shell which cmake)
+CMAKE ?= $(shell which cmake)
+BUILD_DIR = build/$(shell echo $(BUILD_TYPE) | tr '[:upper:]' '[:lower:]')
+
+# Build-type shortcut targets (debug, release, relwithdebinfo, minsizerel)
+# When one of these is used, remaining goals are forwarded to a recursive make
+# with BUILD_TYPE set, and suppressed in the outer invocation.
+_BT_TARGETS = debug release relwithdebinfo minsizerel
+_BT_GOAL := $(filter $(_BT_TARGETS),$(MAKECMDGOALS))
+ifneq ($(_BT_GOAL),)
+$(filter-out $(_BT_GOAL),$(_BT_TARGETS) $(MAKECMDGOALS)): ;
+endif
+# Shared CPM source cache so all build types reuse the same downloaded deps
+DEPS_CACHE_DIR = $(CURDIR)/build/_deps
+CMAKE = /home/jay/projects/astrea/.venv/bin/cmake
+CTEST ?= ctest
 MAKE = make
 INSTALL_PREFIX = ~/.local
-BUILD_TYPE = Release
 NUM_JOBS = $(shell nproc)
 
 # Build options (can be overridden via environment or command line)
@@ -27,6 +39,7 @@ PAGMO_BUILD_STATIC_LIBRARY ?= OFF
 # CMake configuration flags
 CMAKE_FLAGS = -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) \
               -DCMAKE_INSTALL_PREFIX=$(INSTALL_PREFIX) \
+              -DCPM_SOURCE_CACHE=$(DEPS_CACHE_DIR) \
               -DPAGMO_BUILD_TESTS=$(PAGMO_BUILD_TESTS) \
               -DPAGMO_BUILD_BENCHMARKS=$(PAGMO_BUILD_BENCHMARKS) \
               -DPAGMO_BUILD_TUTORIALS=$(PAGMO_BUILD_TUTORIALS) \
@@ -92,13 +105,13 @@ configure: $(BUILD_DIR)/Makefile
 $(BUILD_DIR)/Makefile: CMakeLists.txt
 	@echo "==> Configuring build..."
 	@mkdir -p $(BUILD_DIR)
-	@cd $(BUILD_DIR) && $(CMAKE) .. $(CMAKE_FLAGS)
+	@cd $(BUILD_DIR) && $(CMAKE) ../.. $(CMAKE_FLAGS)
 
 .PHONY: reconfigure
 reconfigure:
 	@echo "==> Forcing reconfiguration..."
 	@mkdir -p $(BUILD_DIR)
-	@cd $(BUILD_DIR) && $(CMAKE) .. $(CMAKE_FLAGS)
+	@cd $(BUILD_DIR) && $(CMAKE) ../.. $(CMAKE_FLAGS)
 
 .PHONY: build
 build: configure
@@ -107,27 +120,35 @@ build: configure
 
 .PHONY: debug
 debug:
-	@$(MAKE) build BUILD_TYPE=Debug
+	@$(MAKE) BUILD_TYPE=Debug $(filter-out debug,$(MAKECMDGOALS))
 
-.PHONY: release 
+.PHONY: release
 release:
-	@$(MAKE) build BUILD_TYPE=Release
+	@$(MAKE) BUILD_TYPE=Release $(filter-out release,$(MAKECMDGOALS))
+
+.PHONY: relwithdebinfo
+relwithdebinfo:
+	@$(MAKE) BUILD_TYPE=RelWithDebInfo $(filter-out relwithdebinfo,$(MAKECMDGOALS))
+
+.PHONY: minsizerel
+minsizerel:
+	@$(MAKE) BUILD_TYPE=MinSizeRel $(filter-out minsizerel,$(MAKECMDGOALS))
 
 # Test targets
 .PHONY: test
 test: build
 	@echo "==> Running tests..."
-	@cd $(BUILD_DIR) && /usr/bin/ctest -j$(NUM_JOBS) --output-on-failure
+	@cd $(BUILD_DIR) && $(CTEST) -j$(NUM_JOBS) --output-on-failure
 
 .PHONY: test-verbose
 test-verbose: build
 	@echo "==> Running tests (verbose)..."
-	@cd $(BUILD_DIR) && /usr/bin/ctest -j$(NUM_JOBS) -V
+	@cd $(BUILD_DIR) && $(CTEST) -j$(NUM_JOBS) -V
 
 .PHONY: test-parallel
 test-parallel: build
 	@echo "==> Running tests in parallel..."
-	@cd $(BUILD_DIR) && /usr/bin/ctest -j$(NUM_JOBS) --parallel $(NUM_JOBS) --output-on-failure
+	@cd $(BUILD_DIR) && $(CTEST) -j$(NUM_JOBS) --parallel $(NUM_JOBS) --output-on-failure
 
 # Installation targets
 .PHONY: install
@@ -234,6 +255,11 @@ distclean:
 	@find . -name "*.a" -delete
 	@find . -name "*~" -delete
 
+.PHONY: new
+new:
+	@echo "==> Removing all build folders completely..."
+	@rm -rf build
+
 # Development convenience targets
 .PHONY: rebuild
 rebuild: clean build
@@ -265,7 +291,6 @@ full-build:
 		PAGMO_WITH_EIGEN3=ON \
 		PAGMO_WITH_NLOPT=ON \
 		PAGMO_WITH_MPI=ON \
-		PAGMO_WITH_IPOPT=ON \
 		PAGMO_ENABLE_IPO=ON
 	@$(MAKE) -C $(BUILD_DIR) -j$(NUM_JOBS) --no-print-directory 
 

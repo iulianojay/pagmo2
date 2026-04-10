@@ -54,10 +54,10 @@ namespace pagmo
 bf_fpras::bf_fpras(double eps, double delta, unsigned seed) : m_eps(eps), m_delta(delta), m_e(seed)
 {
     if (eps <= 0 || eps > 1) {
-        pagmo_throw(std::invalid_argument, "Epsilon needs to be a probability greater then zero");
+        pagmo_throw(invalid_parameter_error, "Epsilon needs to be a probability greater then zero");
     }
     if (delta <= 0 || delta > 1) {
-        pagmo_throw(std::invalid_argument, "Delta needs to be a probability greater than zero");
+        pagmo_throw(invalid_parameter_error, "Delta needs to be a probability greater than zero");
     }
 }
 
@@ -151,7 +151,7 @@ double bf_fpras::compute(std::vector<vector_double> &points, const vector_double
  */
 double bf_fpras::exclusive(unsigned, std::vector<vector_double> &, const vector_double &) const
 {
-    pagmo_throw(std::invalid_argument, "This method is not supported by the bf_fpras algorithm");
+    pagmo_throw(invalid_parameter_error, "This method is not supported by the bf_fpras algorithm");
 }
 
 /// Least contributor method
@@ -162,7 +162,7 @@ double bf_fpras::exclusive(unsigned, std::vector<vector_double> &, const vector_
  */
 unsigned long long bf_fpras::least_contributor(std::vector<vector_double> &, const vector_double &) const
 {
-    pagmo_throw(std::invalid_argument, "This method is not supported by the bf_fpras algorithm");
+    pagmo_throw(invalid_parameter_error, "This method is not supported by the bf_fpras algorithm");
 }
 
 /// Greatest contributor method
@@ -172,7 +172,7 @@ unsigned long long bf_fpras::least_contributor(std::vector<vector_double> &, con
  */
 unsigned long long bf_fpras::greatest_contributor(std::vector<vector_double> &, const vector_double &) const
 {
-    pagmo_throw(std::invalid_argument, "This method is not supported by the bf_fpras algorithm");
+    pagmo_throw(invalid_parameter_error, "This method is not supported by the bf_fpras algorithm");
 }
 
 /// Contributions method
@@ -183,7 +183,7 @@ unsigned long long bf_fpras::greatest_contributor(std::vector<vector_double> &, 
  */
 vector_double bf_fpras::contributions(std::vector<vector_double> &, const vector_double &) const
 {
-    pagmo_throw(std::invalid_argument, "This method is not supported by the bf_fpras algorithm");
+    pagmo_throw(invalid_parameter_error, "This method is not supported by the bf_fpras algorithm");
 }
 
 /// Clone method.

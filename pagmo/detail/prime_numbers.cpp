@@ -150,9 +150,9 @@ constexpr unsigned prime_numbers_table[]
 unsigned prime(unsigned n)
 {
     if (n >= sizeof(prime_numbers_table) / sizeof(unsigned)) {
-        pagmo_throw(std::invalid_argument, "Out of bounds access to the prime table: the prime at index "
-                                               + std::to_string(n) + " was requested, but the table has a size of only "
-                                               + std::to_string(sizeof(prime_numbers_table) / sizeof(unsigned)));
+        pagmo_throw(index_error, "Out of bounds access to the prime table: the prime at index " + std::to_string(n)
+                                     + " was requested, but the table has a size of only "
+                                     + std::to_string(sizeof(prime_numbers_table) / sizeof(unsigned)));
     }
     return prime_numbers_table[n];
 }

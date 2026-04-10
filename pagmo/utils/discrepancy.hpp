@@ -89,10 +89,10 @@ public:
     double operator()();
 
 private:
-    friend class boost::serialization::access;
+    friend class cereal::access;
     // Object serialization
     template <typename Archive>
-    void serialize(Archive &ar, unsigned)
+    void serialize(Archive &ar)
     {
         detail::archive(ar, m_base, m_counter);
     }
@@ -141,10 +141,10 @@ public:
     std::vector<double> operator()();
 
 private:
-    friend class boost::serialization::access;
+    friend class cereal::access;
     // Object serialization
     template <typename Archive>
-    void serialize(Archive &ar, unsigned)
+    void serialize(Archive &ar)
     {
         detail::archive(ar, m_dim, m_vdc);
     }

@@ -48,7 +48,7 @@ namespace pagmo
 hvwfg::hvwfg(unsigned stop_dimension) : hv_algorithm(), m_current_slice(0), m_stop_dimension(stop_dimension)
 {
     if (stop_dimension < 2u) {
-        pagmo_throw(std::invalid_argument, "Stop dimension for WFG must be greater than or equal to 2");
+        pagmo_throw(invalid_parameter_error, "Stop dimension for WFG must be greater than or equal to 2");
     }
 }
 

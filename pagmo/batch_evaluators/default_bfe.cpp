@@ -61,7 +61,7 @@ vector_double default_bfe_cpp_impl(const problem &p, const vector_double &dvs)
     if (p.get_thread_safety() >= thread_safety::basic) {
         return thread_bfe{}(p, dvs);
     }
-    pagmo_throw(std::invalid_argument,
+    pagmo_throw(batch_eval_error,
                 "Cannot execute fitness evaluations in batch mode for a problem of type '" + p.get_name()
                     + "': the problem does not implement the batch_fitness() member function, and its thread safety "
                       "level is not sufficient to run a thread-based batch fitness evaluation implementation");
@@ -79,12 +79,6 @@ std::function<vector_double(const problem &, const vector_double &)> default_bfe
 vector_double default_bfe::operator()(const problem &p, const vector_double &dvs) const
 {
     return detail::default_bfe_impl(p, dvs);
-}
-
-// Serialization support.
-template <typename Archive>
-void default_bfe::serialize(Archive &, unsigned)
-{
 }
 
 } // namespace pagmo

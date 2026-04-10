@@ -253,7 +253,7 @@ void hv_algorithm::assert_minimisation(const std::vector<vector_double> &points,
                << std::endl;
             ss << " P[" << idx << "]\t= " << str_p << std::endl;
             ss << " R\t= " << str_r << std::endl;
-            pagmo_throw(std::invalid_argument, ss.str());
+            pagmo_throw(multi_objective_error, ss.str());
         }
     }
 }

@@ -33,14 +33,13 @@ see https://www.gnu.org/licenses/. */
 
 #if defined(PAGMO_WITH_EIGEN3)
 
+#include <optional>
 #include <string>
 #include <tuple>
 #include <vector>
 
-#include <boost/optional.hpp>
-
 #include <pagmo/algorithm.hpp>
-#include <pagmo/detail/eigen.hpp>
+#include <pagmo/detail/eigen_s11n.hpp>
 #include <pagmo/detail/visibility.hpp>
 #include <pagmo/population.hpp>
 #include <pagmo/rng.hpp>
@@ -223,9 +222,15 @@ public:
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned);
+    void serialize(Archive &ar)
+    {
+
+        detail::archive(ar, m_gen, m_cc, m_cs, m_c1, m_cmu, m_sigma0, m_ftol, m_xtol, m_memory, m_force_bounds, sigma,
+                        mean, variation, newpop, B, D, C, invsqrtC, pc, ps, counteval, eigeneval, m_e, m_seed,
+                        m_verbosity, m_log, m_bfe);
+    }
 
     // Eigen stores indexes and sizes as signed types, while PaGMO
     // uses STL containers thus sizes and indexes are unsigned. To
@@ -269,7 +274,7 @@ private:
     unsigned m_seed;
     unsigned m_verbosity;
     mutable log_type m_log;
-    boost::optional<bfe> m_bfe;
+    std::optional<bfe> m_bfe;
 };
 
 } // namespace pagmo

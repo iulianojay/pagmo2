@@ -69,7 +69,7 @@ namespace pagmo
 std::vector<double> sample_from_simplex(std::vector<double> in)
 {
     if (std::any_of(in.begin(), in.end(), [](double item) { return (item < 0 || item > 1); })) {
-        pagmo_throw(std::invalid_argument, "Input vector must have all elements in [0,1]");
+        pagmo_throw(utility_error, "Input vector must have all elements in [0,1]");
     }
     if (in.size() > 0u) {
         std::sort(in.begin(), in.end(), detail::less_than_f<double>);
@@ -81,16 +81,16 @@ std::vector<double> sample_from_simplex(std::vector<double> in)
         in.pop_back();
         return in;
     } else {
-        pagmo_throw(std::invalid_argument, "Input vector must have at least dimension 1, a size of "
-                                               + std::to_string(in.size()) + " was detected instead.");
+        pagmo_throw(utility_error, "Input vector must have at least dimension 1, a size of " + std::to_string(in.size())
+                                       + " was detected instead.");
     }
 }
 
 van_der_corput::van_der_corput(unsigned b, unsigned n) : m_base(b), m_counter(n)
 {
     if (b < 2u) {
-        pagmo_throw(std::invalid_argument, "The base of the van der Corput sequence must be at least 2: "
-                                               + std::to_string(b) + " was detected");
+        pagmo_throw(utility_error, "The base of the van der Corput sequence must be at least 2: " + std::to_string(b)
+                                       + " was detected");
     }
 }
 

@@ -36,19 +36,12 @@ see https://www.gnu.org/licenses/. */
 #include <utility>
 #include <vector>
 
-// #include <boost/graph/adjacency_list.hpp>
-#include <boost/iterator/transform_iterator.hpp>
-#include <boost/iterator/zip_iterator.hpp>
-#include <boost/numeric/conversion/cast.hpp>
-#include <boost/tuple/tuple.hpp>
-#include <boost/tuple/tuple_io.hpp>
-
 #include <pagmo/exceptions.hpp>
 #include <pagmo/io.hpp>
 #include <pagmo/topologies/base_bgl_topology.hpp>
 #include <pagmo/topology.hpp>
 #include <pagmo/types.hpp>
-
+#include <pagmo/utils/cast.hpp>
 namespace pagmo
 {
 
@@ -62,12 +55,7 @@ namespace
 template <typename I>
 std::size_t scast(I n)
 {
-    return boost::numeric_cast<std::size_t>(n);
-}
-
-bgl_graph_t::vertices_size_type vcast(std::size_t n)
-{
-    return boost::numeric_cast<bgl_graph_t::vertices_size_type>(n);
+    return numeric_cast<std::size_t>(n);
 }
 
 } // namespace
@@ -81,27 +69,27 @@ void base_bgl_topology::unsafe_check_vertex_indices() const {}
 template <typename... Args>
 void base_bgl_topology::unsafe_check_vertex_indices(std::size_t idx, Args... others) const
 {
-    const auto nv = boost::num_vertices(m_graph);
-    if (idx >= nv) {
-        pagmo_throw(std::invalid_argument, "invalid vertex index in a BGL topology: the index is " + std::to_string(idx)
-                                               + ", but the number of vertices is only " + std::to_string(nv));
+    if (!m_graph.has_vertex(idx)) {
+        pagmo_throw(index_error, "invalid vertex index in a graph topology: the index is " + std::to_string(idx)
+                                     + ", but the number of vertices is only "
+                                     + std::to_string(m_graph.vertex_count()));
     }
     unsafe_check_vertex_indices(others...);
 }
 
-bgl_graph_t base_bgl_topology::get_graph() const
+graph_t base_bgl_topology::get_graph() const
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_graph;
 }
 
-bgl_graph_t base_bgl_topology::move_graph()
+graph_t base_bgl_topology::move_graph()
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     return std::move(m_graph);
 }
 
-void base_bgl_topology::set_graph(bgl_graph_t &&g)
+void base_bgl_topology::set_graph(graph_t &&g)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_graph = std::move(g);
@@ -130,21 +118,19 @@ base_bgl_topology &base_bgl_topology::operator=(base_bgl_topology &&other) noexc
 void base_bgl_topology::add_vertex()
 {
     std::lock_guard<std::mutex> lock(m_mutex);
-    boost::add_vertex(m_graph);
+    m_graph.add_vertex(0);
 }
 
 std::size_t base_bgl_topology::num_vertices() const
 {
     std::lock_guard<std::mutex> lock(m_mutex);
-    return detail::scast(boost::num_vertices(m_graph));
+    return m_graph.vertex_count();
 }
 
 bool base_bgl_topology::unsafe_are_adjacent(std::size_t i, std::size_t j) const
 {
     unsafe_check_vertex_indices(i, j);
-    const auto a_vertices = boost::adjacent_vertices(boost::vertex(detail::vcast(i), m_graph), m_graph);
-    return std::find(a_vertices.first, a_vertices.second, boost::vertex(detail::vcast(j), m_graph))
-           != a_vertices.second;
+    return m_graph.has_edge(i, j);
 }
 
 bool base_bgl_topology::are_adjacent(std::size_t i, std::size_t j) const
@@ -160,14 +146,11 @@ void base_bgl_topology::add_edge(std::size_t i, std::size_t j, double w)
     std::lock_guard<std::mutex> lock(m_mutex);
 
     if (unsafe_are_adjacent(i, j)) {
-        pagmo_throw(std::invalid_argument, "cannot add an edge in a BGL topology: there is already an edge connecting "
-                                               + std::to_string(i) + " to " + std::to_string(j));
+        pagmo_throw(index_error, "cannot add an edge in a graph topology: there is already an edge connecting "
+                                     + std::to_string(i) + " to " + std::to_string(j));
     }
 
-    const auto result
-        = boost::add_edge(boost::vertex(detail::vcast(i), m_graph), boost::vertex(detail::vcast(j), m_graph), m_graph);
-    assert(result.second);
-    m_graph[result.first] = w;
+    m_graph.add_edge(i, j, w);
 }
 
 void base_bgl_topology::remove_edge(std::size_t i, std::size_t j)
@@ -175,10 +158,10 @@ void base_bgl_topology::remove_edge(std::size_t i, std::size_t j)
     std::lock_guard<std::mutex> lock(m_mutex);
 
     if (!unsafe_are_adjacent(i, j)) {
-        pagmo_throw(std::invalid_argument, "cannot remove an edge in a BGL topology: there is no edge connecting "
-                                               + std::to_string(i) + " to " + std::to_string(j));
+        pagmo_throw(index_error, "cannot remove an edge in a graph topology: there is no edge connecting "
+                                     + std::to_string(i) + " to " + std::to_string(j));
     }
-    boost::remove_edge(boost::vertex(detail::vcast(i), m_graph), boost::vertex(detail::vcast(j), m_graph), m_graph);
+    m_graph.remove_edge(i, j);
 }
 
 void base_bgl_topology::set_all_weights(double w)
@@ -187,8 +170,8 @@ void base_bgl_topology::set_all_weights(double w)
 
     std::lock_guard<std::mutex> lock(m_mutex);
 
-    for (auto e_range = boost::edges(m_graph); e_range.first != e_range.second; ++e_range.first) {
-        m_graph[*e_range.first] = w;
+    for (const auto &[edge_id, _] : m_graph.get_edges()) {
+        m_graph.get_edge(edge_id.first, edge_id.second) = w;
     }
 }
 
@@ -200,15 +183,11 @@ void base_bgl_topology::set_weight(std::size_t i, std::size_t j, double w)
 
     unsafe_check_vertex_indices(i, j);
 
-    const auto ret
-        = boost::edge(boost::vertex(detail::vcast(i), m_graph), boost::vertex(detail::vcast(j), m_graph), m_graph);
-    if (ret.second) {
-        m_graph[ret.first] = w;
-    } else {
-        pagmo_throw(std::invalid_argument, "cannot set the weight of an edge in a BGL topology: the vertex "
-                                               + std::to_string(i) + " is not connected to vertex "
-                                               + std::to_string(j));
+    if (!m_graph.has_edge(i, j)) {
+        pagmo_throw(index_error, "cannot set the weight of an edge in a graph topology: the vertex " + std::to_string(i)
+                                     + " is not connected to vertex " + std::to_string(j));
     }
+    m_graph.get_edge(i, j) = w;
 }
 
 std::pair<std::vector<std::size_t>, vector_double> base_bgl_topology::get_connections(std::size_t i) const
@@ -219,12 +198,12 @@ std::pair<std::vector<std::size_t>, vector_double> base_bgl_topology::get_connec
 
     std::pair<std::vector<std::size_t>, vector_double> retval;
 
-    const auto vi = boost::vertex(detail::vcast(i), m_graph);
-    for (auto iav = boost::inv_adjacent_vertices(vi, m_graph); iav.first != iav.second; ++iav.first) {
-        const auto e = boost::edge(boost::vertex(*iav.first, m_graph), vi, m_graph);
-        assert(e.second);
-        retval.first.emplace_back(detail::scast(*iav.first));
-        retval.second.emplace_back(m_graph[e.first]);
+    // Find all edges whose target is vertex i (incoming edges).
+    for (const auto &[edge_id, weight] : m_graph.get_edges()) {
+        if (edge_id.second == i) {
+            retval.first.emplace_back(edge_id.first);
+            retval.second.emplace_back(weight);
+        }
     }
     return retval;
 }
@@ -235,15 +214,11 @@ double base_bgl_topology::get_edge_weight(std::size_t i, std::size_t j) const
 
     unsafe_check_vertex_indices(i, j);
 
-    const auto ret
-        = boost::edge(boost::vertex(detail::vcast(i), m_graph), boost::vertex(detail::vcast(j), m_graph), m_graph);
-    if (ret.second) {
-        return m_graph[ret.first];
-    } else {
-        pagmo_throw(std::invalid_argument, "cannot get the weight of an edge in a BGL topology: the vertex "
-                                               + std::to_string(i) + " is not connected to vertex "
-                                               + std::to_string(j));
+    if (!m_graph.has_edge(i, j)) {
+        pagmo_throw(index_error, "cannot get the weight of an edge in a graph topology: the vertex " + std::to_string(i)
+                                     + " is not connected to vertex " + std::to_string(j));
     }
+    return m_graph.get_edge(i, j);
 }
 
 std::string base_bgl_topology::get_extra_info() const
@@ -253,33 +228,28 @@ std::string base_bgl_topology::get_extra_info() const
     {
         std::lock_guard<std::mutex> lock(m_mutex);
 
-        oss << "\tNumber of vertices: " << boost::num_vertices(m_graph) << '\n';
-        oss << "\tNumber of edges: " << boost::num_edges(m_graph) << '\n';
+        oss << "\tNumber of vertices: " << m_graph.vertex_count() << '\n';
+        oss << "\tNumber of edges: " << m_graph.edge_count() << '\n';
         oss << "\tAdjacency list:\n\n";
 
-        for (auto vs = boost::vertices(m_graph); vs.first != vs.second; ++vs.first) {
-            // Get the list of outgoing edges from the current vertex.
-            const auto erange = boost::out_edges(*vs.first, m_graph);
+        // Collect vertex IDs and sort for consistent output.
+        std::vector<graaf::vertex_id_t> vids;
+        vids.reserve(m_graph.vertex_count());
+        for (const auto &[vid, _] : m_graph.get_vertices()) {
+            vids.push_back(vid);
+        }
+        std::sort(vids.begin(), vids.end());
 
-            // Helper to extract the target vertex from an edge descriptor (that is,
-            // the vertex a directed edge points to).
-            auto target_getter = [this](decltype(*erange.first) ed) { return boost::target(ed, m_graph); };
+        for (const auto vid : vids) {
+            // Build sorted (target, weight) pairs for the outgoing edges.
+            std::vector<std::pair<graaf::vertex_id_t, double>> adj;
+            for (const auto nid : m_graph.get_neighbors(vid)) {
+                adj.emplace_back(nid, m_graph.get_edge(vid, nid));
+            }
+            std::sort(adj.begin(), adj.end());
 
-            // Helper to extract the edge weight from an edge descriptor.
-            auto weight_getter = [this](decltype(*erange.first) ed) { return m_graph[ed]; };
-
-            // Make zip iterators for bundling together the target of an edge
-            // and its weight.
-            auto z_begin = boost::make_zip_iterator(
-                boost::make_tuple(boost::make_transform_iterator(erange.first, target_getter),
-                                  boost::make_transform_iterator(erange.first, weight_getter)));
-            auto z_end = boost::make_zip_iterator(
-                boost::make_tuple(boost::make_transform_iterator(erange.second, target_getter),
-                                  boost::make_transform_iterator(erange.second, weight_getter)));
-
-            // Print the vertex, and its adjacent vertices together with the edges' weights.
-            oss << "\t\t" << *vs.first << ": ";
-            detail::stream_range(oss, z_begin, z_end);
+            oss << "\t\t" << vid << ": ";
+            detail::stream_range(oss, adj.begin(), adj.end());
             oss << '\n';
         }
     }
@@ -287,7 +257,7 @@ std::string base_bgl_topology::get_extra_info() const
     return oss.str();
 }
 
-bgl_graph_t base_bgl_topology::to_bgl() const
+graph_t base_bgl_topology::to_graph() const
 {
     return get_graph();
 }

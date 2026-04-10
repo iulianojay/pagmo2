@@ -55,9 +55,13 @@ public:
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned);
+    void serialize(Archive &ar)
+    {
+
+        detail::archive(ar, cereal::base_class<base_bgl_topology>(this), m_weight);
+    }
 
     double m_weight;
 };

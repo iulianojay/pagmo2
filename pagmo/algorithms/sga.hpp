@@ -258,9 +258,14 @@ public:
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned);
+    void serialize(Archive &ar)
+    {
+
+        detail::archive(ar, m_gen, m_cr, m_eta_c, m_m, m_param_m, m_param_s, m_mutation, m_selection, m_crossover, m_e,
+                        m_seed, m_verbosity, m_log);
+    }
 
     PAGMO_DLL_LOCAL std::vector<vector_double::size_type> perform_selection(const std::vector<vector_double> &F) const;
     PAGMO_DLL_LOCAL void perform_crossover(std::vector<vector_double> &X,

@@ -224,9 +224,14 @@ public:
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned);
+    void serialize(Archive &ar)
+    {
+
+        detail::archive(ar, m_max_gen, m_omega, m_eta1, m_eta2, m_max_vel, m_variant, m_neighb_type, m_neighb_param, m_e,
+                        m_seed, m_verbosity, m_log);
+    }
 
     PAGMO_DLL_LOCAL vector_double
     particle__get_best_neighbor(population::size_type pidx, std::vector<std::vector<vector_double::size_type>> &neighb,

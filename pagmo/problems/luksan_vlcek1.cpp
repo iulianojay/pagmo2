@@ -44,7 +44,7 @@ namespace pagmo
 luksan_vlcek1::luksan_vlcek1(unsigned dim) : m_dim(dim)
 {
     if (dim < 3u) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(problem_config_error,
                     "luksan_vlcek1 must have minimum 3 dimension, " + std::to_string(dim) + " requested");
     }
 }
@@ -146,13 +146,6 @@ sparsity_pattern luksan_vlcek1::gradient_sparsity() const
         retval.emplace_back(i + 1, i + 2);
     }
     return retval;
-}
-
-// Object serialization
-template <typename Archive>
-void luksan_vlcek1::serialize(Archive &ar, unsigned)
-{
-    ar & m_dim;
 }
 
 } // namespace pagmo

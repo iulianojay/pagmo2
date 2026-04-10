@@ -29,9 +29,8 @@ see https://www.gnu.org/licenses/. */
 #ifndef PAGMO_DETAIL_GTE_GETTER_HPP
 #define PAGMO_DETAIL_GTE_GETTER_HPP
 
+#include <any>
 #include <functional>
-
-#include <boost/any.hpp>
 
 #include <pagmo/detail/visibility.hpp>
 
@@ -48,7 +47,7 @@ namespace detail
 // from the external thread. When working in C++, this
 // functor will return an empty object with no side
 // effects.
-PAGMO_DLL_PUBLIC extern std::function<boost::any()> gte_getter;
+PAGMO_DLL_PUBLIC extern std::function<std::any()> gte_getter;
 
 } // namespace detail
 

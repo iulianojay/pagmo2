@@ -105,9 +105,13 @@ struct PAGMO_DLL_PUBLIC rastrigin {
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned);
+    void serialize(Archive &ar)
+    {
+
+        ar & m_dim;
+    }
 };
 
 } // namespace pagmo

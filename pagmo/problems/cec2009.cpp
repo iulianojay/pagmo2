@@ -83,12 +83,12 @@ cec2009::cec2009(unsigned prob_id, bool is_constrained, unsigned dim)
     : m_prob_id(prob_id), m_is_constrained(is_constrained), m_dim(dim)
 {
     if (prob_id < 1u || prob_id > 10u) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(problem_config_error,
                     "Error: CEC2009 Test functions are only defined for prob_id in [1, 10], a prob_id of "
                         + std::to_string(prob_id) + " was requested.");
     }
     if (dim < 1u) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(problem_config_error,
                     "Error: CEC2009 Test functions must have a non zero dimension: a dimension of "
                         + std::to_string(dim) + " was requested.");
     }
@@ -243,13 +243,6 @@ std::string cec2009::get_name() const
     }
     retval.append(std::to_string(m_prob_id));
     return retval;
-}
-
-// Object serialization
-template <typename Archive>
-void cec2009::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, m_prob_id, m_is_constrained, m_dim);
 }
 
 namespace

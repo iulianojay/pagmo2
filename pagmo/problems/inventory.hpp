@@ -110,9 +110,13 @@ public:
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned);
+    void serialize(Archive &ar)
+    {
+
+        detail::archive(ar, m_weeks, m_sample_size, m_e, m_seed);
+    }
 
     // Number of weeks to plan for
     unsigned m_weeks;

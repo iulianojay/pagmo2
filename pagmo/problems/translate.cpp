@@ -81,7 +81,7 @@ translate::translate() : m_translation({0.}) {}
 void translate::generic_ctor_impl(const vector_double &translation)
 {
     if (translation.size() != m_problem.get_nx()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(dimension_mismatch_error,
                     "Length of shift vector is: " + std::to_string(translation.size())
                         + " while the problem dimension is: " + std::to_string(m_problem.get_nx()));
     }
@@ -402,13 +402,6 @@ const problem &translate::get_inner_problem() const
 problem &translate::get_inner_problem()
 {
     return m_problem;
-}
-
-// Object serialization
-template <typename Archive>
-void translate::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, m_problem, m_translation);
 }
 
 vector_double translate::translate_back(const vector_double &x) const

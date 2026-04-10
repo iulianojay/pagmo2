@@ -44,10 +44,10 @@ null_problem::null_problem(vector_double::size_type nobj, vector_double::size_ty
     : m_nobj(nobj), m_nec(nec), m_nic(nic), m_nix(nix)
 {
     if (!nobj) {
-        pagmo_throw(std::invalid_argument, "The null problem must have a non-zero number of objectives");
+        pagmo_throw(problem_config_error, "The null problem must have a non-zero number of objectives");
     }
     if (nix > 1u) {
-        pagmo_throw(std::invalid_argument, "The null problem must have an integer part strictly smaller than 2");
+        pagmo_throw(problem_config_error, "The null problem must have an integer part strictly smaller than 2");
     }
 }
 
@@ -67,13 +67,6 @@ vector_double null_problem::fitness(const vector_double &) const
 std::pair<vector_double, vector_double> null_problem::get_bounds() const
 {
     return {{0.}, {1.}};
-}
-
-// Serialization
-template <typename Archive>
-void null_problem::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, m_nobj, m_nec, m_nic, m_nix);
 }
 
 } // namespace pagmo

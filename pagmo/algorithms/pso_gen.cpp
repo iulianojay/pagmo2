@@ -47,10 +47,6 @@ see https://www.gnu.org/licenses/. */
 #include <pagmo/types.hpp>
 #include <pagmo/utils/generic.hpp>
 
-// NOTE: apparently this must be included *after*
-// the other serialization headers.
-#include <boost/serialization/optional.hpp>
-
 namespace pagmo
 {
 
@@ -83,30 +79,30 @@ pso_gen::pso_gen(unsigned gen, double omega, double eta1, double eta2, double ma
 {
     if (m_omega < 0. || m_omega > 1.) {
         // variants using Inertia weight
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "The particles' inertia (or the constriction factor) must be in the [0,1] range, while a value of "
                         + std::to_string(m_variant) + " was detected");
     }
     if (m_eta1 < 0. || m_eta2 < 0. || m_eta1 > 4. || m_eta2 > 4.) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "The eta parameters must be in the [0,4] range, while eta1 = " + std::to_string(m_eta1)
                         + ", eta2 = " + std::to_string(m_eta2) + " was detected");
     }
     if (m_max_vel <= 0. || m_max_vel > 1.) {
-        pagmo_throw(std::invalid_argument, "The maximum particle velocity (as a fraction of the bounds) should be "
+        pagmo_throw(invalid_parameter_error, "The maximum particle velocity (as a fraction of the bounds) should be "
                                            "in the (0,1] range, while a value of "
                                                + std::to_string(m_max_vel) + " was detected");
     }
     if (m_variant < 1u || m_variant > 6u) {
-        pagmo_throw(std::invalid_argument, "The PSO variant must be in [1,6], while a value of "
+        pagmo_throw(invalid_parameter_error, "The PSO variant must be in [1,6], while a value of "
                                                + std::to_string(m_variant) + " was detected");
     }
     if (m_neighb_type < 1u || m_neighb_type > 4u) {
-        pagmo_throw(std::invalid_argument, "The swarm topology variant must be in [1,4], while a value of "
+        pagmo_throw(invalid_parameter_error, "The swarm topology variant must be in [1,4], while a value of "
                                                + std::to_string(m_neighb_type) + " was detected");
     }
     if (m_neighb_param < 1u) {
-        pagmo_throw(std::invalid_argument, "The neighborhood parameter must be in (0, inf), while a value of "
+        pagmo_throw(invalid_parameter_error, "The neighborhood parameter must be in (0, inf), while a value of "
                                                + std::to_string(m_neighb_param) + " was detected");
     }
 }
@@ -132,15 +128,15 @@ population pso_gen::evolve(population pop) const
     // PREAMBLE-------------------------------------------------------------------------------------------------
     // We start by checking that the problem is suitable for this particular algorithm.
     if (prob.get_nc() != 0u) {
-        pagmo_throw(std::invalid_argument, "Non linear constraints detected in " + prob.get_name() + " instance. "
+        pagmo_throw(incompatible_problem_error, "Non linear constraints detected in " + prob.get_name() + " instance. "
                                                + get_name() + " cannot deal with them");
     }
     if (prob.get_nf() != 1u) {
-        pagmo_throw(std::invalid_argument, "Multiple objectives detected in " + prob.get_name() + " instance. "
+        pagmo_throw(incompatible_problem_error, "Multiple objectives detected in " + prob.get_name() + " instance. "
                                                + get_name() + " cannot deal with them");
     }
     if (!pop.size()) {
-        pagmo_throw(std::invalid_argument, get_name() + " does not work on an empty population");
+        pagmo_throw(insufficient_population_error, get_name() + " does not work on an empty population");
     }
     // ---------------------------------------------------------------------------------------------------------
     // No throws, all valid: we clear the logs
@@ -507,10 +503,10 @@ population pso_gen::evolve(population pop) const
                 // We start printing
                 // Every 50 lines print the column names
                 if (count % 50u == 1u) {
-                    print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "gbest:", std::setw(15),
+                    pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "gbest:", std::setw(15),
                           "Mean Vel.:", std::setw(15), "Mean lbest:", std::setw(15), "Avg. Dist.:", '\n');
                 }
-                print(std::setw(7), gen, std::setw(15), feval_count, std::setw(15), best, std::setw(15), mean_velocity,
+                pagmo::print(std::setw(7), gen, std::setw(15), feval_count, std::setw(15), best, std::setw(15), mean_velocity,
                       std::setw(15), lb_avg, std::setw(15), avg_dist, '\n');
                 ++count;
                 // Logs
@@ -571,14 +567,6 @@ std::string pso_gen::get_extra_info() const
     stream(ss, "\n\tSeed: ", m_seed);
     stream(ss, "\n\tVerbosity: ", m_verbosity);
     return ss.str();
-}
-
-// Object serialization
-template <typename Archive>
-void pso_gen::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, m_max_gen, m_omega, m_eta1, m_eta2, m_max_vel, m_variant, m_neighb_type, m_neighb_param, m_e,
-                    m_seed, m_verbosity, m_log, m_bfe);
 }
 
 /**

@@ -48,17 +48,17 @@ namespace pagmo
 golomb_ruler::golomb_ruler(unsigned order, unsigned upper_bound) : m_order(order), m_upper_bound(upper_bound)
 {
     if (order < 2u) {
-        pagmo_throw(std::invalid_argument, "Golomb ruler problem must have at least order 2, while "
+        pagmo_throw(problem_config_error, "Golomb ruler problem must have at least order 2, while "
                                                + std::to_string(order) + " was requested.");
     }
     if (upper_bound < 2u) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(problem_config_error,
                     "The upper bound for the maximum distance between consecutive ticks has to be at least 2, while "
                         + std::to_string(upper_bound) + " was requested.");
     }
     // Overflow can occur when evaluating the fitness later if the upper_bound is too large.
     if (upper_bound > std::numeric_limits<unsigned>::max() / (order - 1u)) {
-        pagmo_throw(std::overflow_error,
+        pagmo_throw(size_limit_error,
                     "Overflow in Golomb ruler problem, select a smaller maximum distance between consecutive ticks.");
     }
 }
@@ -117,13 +117,6 @@ std::pair<vector_double, vector_double> golomb_ruler::get_bounds() const
 std::string golomb_ruler::get_name() const
 {
     return "Golomb Ruler (order " + std::to_string(m_order) + ")";
-}
-
-// Object serialization
-template <typename Archive>
-void golomb_ruler::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, m_order, m_upper_bound);
 }
 
 } // namespace pagmo

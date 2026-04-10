@@ -29,11 +29,10 @@ see https://www.gnu.org/licenses/. */
 #ifndef PAGMO_ALGORITHMS_MOEAD_GEN_HPP
 #define PAGMO_ALGORITHMS_MOEAD_GEN_HPP
 
+#include <optional>
 #include <string>
 #include <tuple>
 #include <vector>
-
-#include <boost/optional.hpp>
 
 #include <pagmo/algorithm.hpp>
 #include <pagmo/bfe.hpp>
@@ -194,9 +193,14 @@ public:
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned);
+    void serialize(Archive &ar)
+    {
+
+        detail::archive(ar, m_gen, m_weight_generation, m_decomposition, m_neighbours, m_CR, m_F, m_eta_m, m_realb, m_limit,
+                        m_preserve_diversity, m_e, m_seed, m_verbosity, m_log, m_bfe);
+    }
 
     PAGMO_DLL_LOCAL std::vector<population::size_type>
     select_parents(population::size_type n, const std::vector<std::vector<population::size_type>> &neigh_idx,
@@ -216,7 +220,7 @@ private:
     unsigned m_seed;
     unsigned m_verbosity;
     mutable log_type m_log;
-    boost::optional<bfe> m_bfe;
+    std::optional<bfe> m_bfe;
 };
 
 } // namespace pagmo

@@ -306,16 +306,16 @@ public:
     }
 
 private:
-    friend class boost::serialization::access;
+    friend class cereal::access;
     // Save to archive.
     template <typename Archive>
-    void save(Archive &ar, unsigned) const
+    void save(Archive &ar) const
     {
         detail::to_archive(ar, m_prob, m_ID, m_x, m_f, m_champion_x, m_champion_f, m_e, m_seed);
     }
     // Load from archive.
     template <typename Archive>
-    void load(Archive &ar, unsigned)
+    void load(Archive &ar)
     {
         try {
             detail::from_archive(ar, m_prob, m_ID, m_x, m_f, m_champion_x, m_champion_f, m_e, m_seed);
@@ -326,7 +326,6 @@ private:
         }
         // LCOV_EXCL_STOP
     }
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
 
     void clear();
 

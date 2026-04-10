@@ -67,11 +67,11 @@ population sea::evolve(population pop) const
     // We start by checking that the problem is suitable for this
     // particular algorithm.
     if (prob.get_nc() != 0u) {
-        pagmo_throw(std::invalid_argument, "Non linear constraints detected in " + prob.get_name() + " instance. "
+        pagmo_throw(incompatible_problem_error, "Non linear constraints detected in " + prob.get_name() + " instance. "
                                                + get_name() + " cannot deal with them");
     }
     if (prob.get_nf() != 1u) {
-        pagmo_throw(std::invalid_argument, "Multiple objectives detected in " + prob.get_name() + " instance. "
+        pagmo_throw(incompatible_problem_error, "Multiple objectives detected in " + prob.get_name() + " instance. "
                                                + get_name() + " cannot deal with them");
     }
     // Get out if there is nothing to do.
@@ -79,7 +79,7 @@ population sea::evolve(population pop) const
         return pop;
     }
     if (!pop.size()) {
-        pagmo_throw(std::invalid_argument, get_name() + " does not work on an empty population");
+        pagmo_throw(insufficient_population_error, get_name() + " does not work on an empty population");
     }
     // ---------------------------------------------------------------------------------------------------------
 
@@ -126,10 +126,10 @@ population sea::evolve(population pop) const
             if (m_verbosity == 1u && improvement > 0.) {
                 // Prints on screen
                 if (count % 50u == 1u) {
-                    print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
+                    pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
                           "Improvement:", std::setw(15), "Mutations:", '\n');
                 }
-                print(std::setw(7), i, std::setw(15), prob.get_fevals() - fevals0, std::setw(15),
+                pagmo::print(std::setw(7), i, std::setw(15), prob.get_fevals() - fevals0, std::setw(15),
                       pop.get_f()[best_idx][0], std::setw(15), improvement, std::setw(15), mut, '\n');
                 ++count;
                 // Logs
@@ -142,10 +142,10 @@ population sea::evolve(population pop) const
             if (i % m_verbosity == 1u) {
                 // Every 50 lines print the column names
                 if (count % 50u == 1u) {
-                    print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
+                    pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
                           "Improvement:", std::setw(15), "Mutations:", '\n');
                 }
-                print(std::setw(7), i, std::setw(15), prob.get_fevals() - fevals0, std::setw(15),
+                pagmo::print(std::setw(7), i, std::setw(15), prob.get_fevals() - fevals0, std::setw(15),
                       pop.get_f()[best_idx][0], std::setw(15), improvement, std::setw(15), mut, '\n');
                 ++count;
                 // Logs
@@ -176,13 +176,6 @@ std::string sea::get_extra_info() const
 {
     return "\tGenerations: " + std::to_string(m_gen) + "\n\tVerbosity: " + std::to_string(m_verbosity)
            + "\n\tSeed: " + std::to_string(m_seed);
-}
-
-// Object serialization
-template <typename Archive>
-void sea::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, m_gen, m_e, m_seed, m_verbosity, m_log);
 }
 
 } // namespace pagmo

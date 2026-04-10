@@ -58,11 +58,11 @@ moead::moead(unsigned gen, std::string weight_generation, std::string decomposit
 {
     // Sanity checks
     if (m_weight_generation != "random" && m_weight_generation != "grid" && m_weight_generation != "low discrepancy") {
-        pagmo_throw(std::invalid_argument, "Weight generation method requested is '" + m_weight_generation
+        pagmo_throw(invalid_parameter_error, "Weight generation method requested is '" + m_weight_generation
                                                + "', but only one of 'random', 'low discrepancy', 'grid' is allowed");
     }
     if (m_decomposition != "tchebycheff" && m_decomposition != "weighted" && m_decomposition != "bi") {
-        pagmo_throw(std::invalid_argument, "Weight generation method requested is '" + m_decomposition
+        pagmo_throw(invalid_parameter_error, "Weight generation method requested is '" + m_decomposition
                                                + "', but only one of 'tchebycheff', 'weighted', 'bi' is allowed");
     }
     if (CR > 1.0 || CR < 0.) {
@@ -78,17 +78,17 @@ moead::moead(unsigned gen, std::string weight_generation, std::string decomposit
                 + std::to_string(F) + " was detected");
     }
     if (eta_m < 0.) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "The distribution index for the polynomial mutation (eta_m) needs to be positive, while a value of "
                         + std::to_string(eta_m) + " was detected");
     }
     if (realb > 1.0 || realb < 0.) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "The chance of considering a neighbourhood (realb) needs to be in [0,1], while a value of "
                         + std::to_string(realb) + " was detected");
     }
     if (neighbours < 2) {
-        pagmo_throw(std::invalid_argument, "The size of the weight's neighborhood needs to be >= 2, while a size of "
+        pagmo_throw(invalid_parameter_error, "The size of the weight's neighborhood needs to be >= 2, while a size of "
                                                + std::to_string(neighbours) + " was detected");
     }
 }
@@ -118,27 +118,27 @@ population moead::evolve(population pop) const
     // We start by checking that the problem is suitable for this
     // particular algorithm.
     if (detail::some_bound_is_equal(prob)) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(incompatible_problem_error,
                     get_name()
                         + " cannot work on problems having a lower bound equal to an upper bound. Check your bounds.");
     }
     if (!NP) {
-        pagmo_throw(std::invalid_argument, get_name() + " cannot work on an empty population");
+        pagmo_throw(insufficient_population_error, get_name() + " cannot work on an empty population");
     }
     if (prob.get_nf() < 2u) {
-        pagmo_throw(std::invalid_argument, "This is a multiobjective algorithm, while number of objectives detected in "
+        pagmo_throw(incompatible_problem_error, "This is a multiobjective algorithm, while number of objectives detected in "
                                                + prob.get_name() + " is " + std::to_string(prob.get_nf()));
     }
     if (prob.get_nc() != 0u) {
-        pagmo_throw(std::invalid_argument, "Non linear constraints detected in " + prob.get_name() + " instance. "
+        pagmo_throw(incompatible_problem_error, "Non linear constraints detected in " + prob.get_name() + " instance. "
                                                + get_name() + " cannot deal with them");
     }
     if (prob.is_stochastic()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(incompatible_problem_error,
                     "The problem appears to be stochastic " + get_name() + " cannot deal with it");
     }
     if (m_neighbours > NP - 1u) {
-        pagmo_throw(std::invalid_argument, "The neighbourhood size specified (T) is " + std::to_string(m_neighbours)
+        pagmo_throw(invalid_parameter_error, "The neighbourhood size specified (T) is " + std::to_string(m_neighbours)
                                                + ": too large for the input population having size "
                                                + std::to_string(NP));
     }
@@ -182,24 +182,24 @@ population moead::evolve(population pop) const
                 }
                 // Every 50 lines print the column names
                 if (count % 50u == 1u) {
-                    print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "ADF:");
+                    pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "ADF:");
                     for (decltype(ideal_point.size()) i = 0u; i < ideal_point.size(); ++i) {
                         if (i >= 5u) {
-                            print(std::setw(15), "... :");
+                            pagmo::print(std::setw(15), "... :");
                             break;
                         }
-                        print(std::setw(15), "ideal" + std::to_string(i + 1u) + ":");
+                        pagmo::print(std::setw(15), "ideal" + std::to_string(i + 1u) + ":");
                     }
-                    print('\n');
+                    pagmo::print('\n');
                 }
-                print(std::setw(7), gen, std::setw(15), prob.get_fevals() - fevals0, std::setw(15), adf);
+                pagmo::print(std::setw(7), gen, std::setw(15), prob.get_fevals() - fevals0, std::setw(15), adf);
                 for (decltype(ideal_point.size()) i = 0u; i < ideal_point.size(); ++i) {
                     if (i >= 5u) {
                         break;
                     }
-                    print(std::setw(15), ideal_point[i]);
+                    pagmo::print(std::setw(15), ideal_point[i]);
                 }
-                print('\n');
+                pagmo::print('\n');
                 ++count;
                 // Logs
                 m_log.emplace_back(gen, prob.get_fevals() - fevals0, adf, ideal_point);
@@ -320,14 +320,6 @@ std::string moead::get_extra_info() const
     stream(ss, "\n\tSeed: ", m_seed);
     stream(ss, "\n\tVerbosity: ", m_verbosity);
     return ss.str();
-}
-
-// Object serialization
-template <typename Archive>
-void moead::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, m_gen, m_weight_generation, m_decomposition, m_neighbours, m_CR, m_F, m_eta_m, m_realb, m_limit,
-                    m_preserve_diversity, m_e, m_seed, m_verbosity, m_log);
 }
 
 std::vector<population::size_type>

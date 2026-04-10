@@ -48,12 +48,6 @@ population null_algorithm::evolve(const population &pop) const
     return pop;
 }
 
-// Serialization support.
-template <typename Archive>
-void null_algorithm::serialize(Archive &, unsigned)
-{
-}
-
 } // namespace pagmo
 
 PAGMO_S11N_ALGORITHM_IMPLEMENT(pagmo::null_algorithm)

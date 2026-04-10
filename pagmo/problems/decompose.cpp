@@ -68,56 +68,56 @@ void decompose::generic_ctor_impl(const vector_double &weight, const vector_doub
     const auto original_fitness_dimension = m_problem.get_nobj();
     // 0 - we check that the problem is multiobjective and unconstrained
     if (original_fitness_dimension < 2u) {
-        pagmo_throw(std::invalid_argument, "Decomposition can only be applied to multi-objective problems");
+        pagmo_throw(incompatible_problem_error, "Decomposition can only be applied to multi-objective problems");
     }
     if (m_problem.get_nc() != 0u) {
-        pagmo_throw(std::invalid_argument, "Decomposition can only be applied to unconstrained problems, it seems "
-                                           "you are trying to decompose a problem with "
-                                               + std::to_string(m_problem.get_nc()) + " constraints");
+        pagmo_throw(incompatible_problem_error, "Decomposition can only be applied to unconstrained problems, it seems "
+                                                "you are trying to decompose a problem with "
+                                                    + std::to_string(m_problem.get_nc()) + " constraints");
     }
     // 1 - we check that the decomposition method is one of "weighted", "tchebycheff" or "bi"
     if (method != "weighted" && method != "tchebycheff" && method != "bi") {
-        pagmo_throw(std::invalid_argument, "Decomposition method requested is: " + method
-                                               + " while only one of ['weighted', 'tchebycheff', 'bi'] are allowed");
+        pagmo_throw(decomposition_error, "Decomposition method requested is: " + method
+                                             + " while only one of ['weighted', 'tchebycheff', 'bi'] are allowed");
     }
     // 2 - we check the sizes of the input weight vector and of the reference point and forbids inf and nan
     if (weight.size() != original_fitness_dimension) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(dimension_mismatch_error,
                     "Weight vector size must be equal to the number of objectives. The size of the weight vector is "
                         + std::to_string(weight.size()) + " while the problem has "
                         + std::to_string(original_fitness_dimension) + " objectives");
     }
     for (auto item : weight) {
         if (!std::isfinite(item)) {
-            pagmo_throw(std::invalid_argument, "Weight contains non finite numbers");
+            pagmo_throw(invalid_value_error, "Weight contains non finite numbers");
         }
     }
     if (z.size() != original_fitness_dimension) {
         pagmo_throw(
-            std::invalid_argument,
+            dimension_mismatch_error,
             "Reference point size must be equal to the number of objectives. The size of the reference point is "
                 + std::to_string(z.size()) + " while the problem has " + std::to_string(original_fitness_dimension)
                 + " objectives");
     }
     for (auto item : z) {
         if (!std::isfinite(item)) {
-            pagmo_throw(std::invalid_argument, "Reference point contains non finite numbers");
+            pagmo_throw(invalid_value_error, "Reference point contains non finite numbers");
         }
     }
 
     // 3 - we check that the weight vector is normalized.
     auto sum = std::accumulate(weight.begin(), weight.end(), 0.);
     if (std::abs(sum - 1.0) > 1E-8) {
-        pagmo_throw(std::invalid_argument, "The weight vector must sum to 1 with a tolerance of 1E-8. The sum of "
-                                           "the weight vector components was detected to be: "
-                                               + std::to_string(sum));
+        pagmo_throw(decomposition_error, "The weight vector must sum to 1 with a tolerance of 1E-8. The sum of "
+                                         "the weight vector components was detected to be: "
+                                             + std::to_string(sum));
     }
     // 4 - we check the weight vector only contains positive numbers
     for (decltype(m_weight.size()) i = 0u; i < m_weight.size(); ++i) {
         if (m_weight[i] < 0.) {
-            pagmo_throw(std::invalid_argument, "The weight vector may contain only non negative values. A value of "
-                                                   + std::to_string(m_weight[i]) + " was detected at index "
-                                                   + std::to_string(i));
+            pagmo_throw(decomposition_error, "The weight vector may contain only non negative values. A value of "
+                                                 + std::to_string(m_weight[i]) + " was detected at index "
+                                                 + std::to_string(i));
         }
     }
 }
@@ -283,13 +283,6 @@ const problem &decompose::get_inner_problem() const
 problem &decompose::get_inner_problem()
 {
     return m_problem;
-}
-
-// Object serialization.
-template <typename Archive>
-void decompose::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, m_problem, m_weight, m_z, m_method, m_adapt_ideal);
 }
 
 } // namespace pagmo

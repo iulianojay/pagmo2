@@ -29,12 +29,11 @@ see https://www.gnu.org/licenses/. */
 #ifndef PAGMO_ALGORITHMS_GACO_HPP
 #define PAGMO_ALGORITHMS_GACO_HPP
 
+#include <optional>
 #include <random>
 #include <string>
 #include <tuple>
 #include <vector>
-
-#include <boost/optional.hpp>
 
 #include <pagmo/algorithm.hpp>
 #include <pagmo/bfe.hpp>
@@ -221,9 +220,15 @@ public:
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned);
+    void serialize(Archive &ar)
+    {
+
+        detail::archive(ar, m_gen, m_acc, m_impstop, m_evalstop, m_focus, m_ker, m_oracle, m_e, m_seed, m_verbosity, m_log,
+                        m_res, m_threshold, m_q, m_n_gen_mark, m_memory, m_counter, m_sol_archive, m_n_evalstop,
+                        m_n_impstop, m_gen_mark, m_fevals, m_bfe);
+    }
 
     PAGMO_DLL_LOCAL double penalty_computation(const vector_double &f, const population &pop,
                                                const unsigned long long nobj, const unsigned long long nec,
@@ -261,7 +266,7 @@ private:
     mutable unsigned m_n_impstop;
     mutable unsigned m_gen_mark;
     mutable vector_double::size_type m_fevals;
-    boost::optional<bfe> m_bfe;
+    std::optional<bfe> m_bfe;
 };
 
 } // namespace pagmo

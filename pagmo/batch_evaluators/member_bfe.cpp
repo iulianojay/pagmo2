@@ -44,12 +44,6 @@ vector_double member_bfe::operator()(const problem &p, const vector_double &dvs)
     return detail::prob_invoke_mem_batch_fitness(p, dvs, false);
 }
 
-// Serialization support.
-template <typename Archive>
-void member_bfe::serialize(Archive &, unsigned)
-{
-}
-
 } // namespace pagmo
 
 PAGMO_S11N_BFE_IMPLEMENT(pagmo::member_bfe)

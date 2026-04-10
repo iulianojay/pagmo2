@@ -29,10 +29,9 @@ see https://www.gnu.org/licenses/. */
 #ifndef PAGMO_NOT_POPULATION_BASED_HPP
 #define PAGMO_NOT_POPULATION_BASED_HPP
 
+#include <any>
 #include <string>
 #include <utility>
-
-#include <boost/any.hpp>
 
 #include <pagmo/detail/visibility.hpp>
 #include <pagmo/population.hpp>
@@ -73,7 +72,7 @@ public:
         m_select = n;
     }
     // Get the individual selection policy or index.
-    boost::any get_selection() const;
+    std::any get_selection() const;
     // Set the individual replacement policy.
     void set_replacement(const std::string &);
     /// Set the individual replacement index.
@@ -88,60 +87,59 @@ public:
         m_replace = n;
     }
     // Get the individual replacement policy or index.
-    boost::any get_replacement() const;
+    std::any get_replacement() const;
 
 private:
-    friend class boost::serialization::access;
+    friend class cereal::access;
     // Save to archive.
     template <typename Archive>
-    void save(Archive &ar, unsigned) const
+    void save(Archive &ar) const
     {
-        if (boost::any_cast<std::string>(&m_select)) {
+        if (std::any_cast<std::string>(&m_select)) {
             // NOTE: true -> string, false -> idx.
-            ar << true;
-            ar << boost::any_cast<std::string>(m_select);
+            ar(true);
+            ar(std::any_cast<std::string>(m_select));
         } else {
-            ar << false;
-            ar << boost::any_cast<population::size_type>(m_select);
+            ar(false);
+            ar(std::any_cast<population::size_type>(m_select));
         }
-        if (boost::any_cast<std::string>(&m_replace)) {
+        if (std::any_cast<std::string>(&m_replace)) {
             // NOTE: true -> string, false -> idx.
-            ar << true;
-            ar << boost::any_cast<std::string>(m_replace);
+            ar(true);
+            ar(std::any_cast<std::string>(m_replace));
         } else {
-            ar << false;
-            ar << boost::any_cast<population::size_type>(m_replace);
+            ar(false);
+            ar(std::any_cast<population::size_type>(m_replace));
         }
-        ar << m_rselect_seed;
-        ar << m_e;
+        ar(m_rselect_seed);
+        ar(m_e);
     }
     // Load from archive.
     template <typename Archive>
-    void load(Archive &ar, unsigned)
+    void load(Archive &ar)
     {
         bool flag;
         std::string str;
         population::size_type idx;
-        ar >> flag;
+        ar(flag);
         if (flag) {
-            ar >> str;
+            ar(str);
             m_select = str;
         } else {
-            ar >> idx;
+            ar(idx);
             m_select = idx;
         }
-        ar >> flag;
+        ar(flag);
         if (flag) {
-            ar >> str;
+            ar(str);
             m_replace = str;
         } else {
-            ar >> idx;
+            ar(idx);
             m_replace = idx;
         }
-        ar >> m_rselect_seed;
-        ar >> m_e;
+        ar(m_rselect_seed);
+        ar(m_e);
     }
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
 
 protected:
     // Select individual.
@@ -152,16 +150,16 @@ protected:
 protected:
     /// Individual selection policy.
     /**
-     * This \p boost::any instance must contain either an \p std::string or a population::size_type,
+     * This \p std::any instance must contain either an \p std::string or a population::size_type,
      * otherwise the behaviour will be undefined.
      */
-    boost::any m_select;
+    std::any m_select;
     /// Individual replacement policy.
     /**
-     * This \p boost::any instance must contain either an \p std::string or a population::size_type,
+     * This \p std::any instance must contain either an \p std::string or a population::size_type,
      * otherwise the behaviour will be undefined.
      */
-    boost::any m_replace;
+    std::any m_replace;
     /// Seed for the <tt>"random"</tt> selection/replacement policies.
     unsigned m_rselect_seed;
     /// Random engine for the <tt>"random"</tt> selection/replacement policies.

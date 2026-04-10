@@ -37,8 +37,8 @@ namespace pagmo
 namespace detail
 {
 
-// A few helpers to give a cereal-like syntax
-// to Boost.serialization.
+// A few helpers to work with cereal archives consistently
+// These maintain the same interface as before but work with cereal
 template <typename Archive>
 inline void archive(Archive &)
 {
@@ -47,7 +47,7 @@ inline void archive(Archive &)
 template <typename Archive, typename Arg0, typename... Args>
 inline void archive(Archive &ar, Arg0 &&arg0, Args &&...args)
 {
-    ar &std::forward<Arg0>(arg0);
+    ar(std::forward<Arg0>(arg0));
     archive(ar, std::forward<Args>(args)...);
 }
 
@@ -59,7 +59,7 @@ inline void to_archive(Archive &)
 template <typename Archive, typename Arg0, typename... Args>
 inline void to_archive(Archive &ar, Arg0 &&arg0, Args &&...args)
 {
-    ar << std::forward<Arg0>(arg0);
+    ar(std::forward<Arg0>(arg0));
     to_archive(ar, std::forward<Args>(args)...);
 }
 
@@ -71,7 +71,7 @@ inline void from_archive(Archive &)
 template <typename Archive, typename Arg0, typename... Args>
 inline void from_archive(Archive &ar, Arg0 &&arg0, Args &&...args)
 {
-    ar >> std::forward<Arg0>(arg0);
+    ar(std::forward<Arg0>(arg0));
     from_archive(ar, std::forward<Args>(args)...);
 }
 

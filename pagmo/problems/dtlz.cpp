@@ -54,22 +54,22 @@ dtlz::dtlz(unsigned prob_id, vector_double::size_type dim, vector_double::size_t
     : m_prob_id(prob_id), m_alpha(alpha), m_dim(dim), m_fdim(fdim)
 {
     if (prob_id == 0u || prob_id > 7u) {
-        pagmo_throw(std::invalid_argument, "DTLZ test suite contains seven (prob_id = [1 ... 7]) problems, prob_id="
-                                               + std::to_string(prob_id) + " was detected");
+        pagmo_throw(problem_config_error, "DTLZ test suite contains seven (prob_id = [1 ... 7]) problems, prob_id="
+                                              + std::to_string(prob_id) + " was detected");
     }
     if (fdim < 2u) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(problem_config_error,
                     "DTLZ test problem have a minimum of 2 objectives: fdim=" + std::to_string(fdim) + " was detected");
     }
     // We conservatively limit these dimensions to avoid checking overflows later
     if (fdim > std::numeric_limits<decltype(fdim)>::max() / 3u) {
-        pagmo_throw(std::invalid_argument, "The number of objectives is too large");
+        pagmo_throw(problem_config_error, "The number of objectives is too large");
     }
     if (dim > std::numeric_limits<decltype(dim)>::max() / 3u) {
-        pagmo_throw(std::invalid_argument, "The problem dimension is too large");
+        pagmo_throw(problem_config_error, "The problem dimension is too large");
     }
     if (dim <= fdim) {
-        pagmo_throw(std::invalid_argument, "The problem dimension has to be larger than the number of objectives.");
+        pagmo_throw(problem_config_error, "The problem dimension has to be larger than the number of objectives.");
     }
 }
 
@@ -156,8 +156,8 @@ double dtlz::p_distance(const pagmo::population &pop) const
 double dtlz::p_distance(const vector_double &x) const
 {
     if (x.size() != m_dim) {
-        pagmo_throw(std::invalid_argument, "The size of the decision vector should be " + std::to_string(m_dim)
-                                               + " while " + std::to_string(x.size()) + " was detected");
+        pagmo_throw(dimension_mismatch_error, "The size of the decision vector should be " + std::to_string(m_dim)
+                                                  + " while " + std::to_string(x.size()) + " was detected");
     }
     return convergence_metric(x);
 }
@@ -169,13 +169,6 @@ double dtlz::p_distance(const vector_double &x) const
 std::string dtlz::get_name() const
 {
     return "DTLZ" + std::to_string(m_prob_id);
-}
-
-// Object serialization
-template <typename Archive>
-void dtlz::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, m_prob_id, m_dim, m_fdim, m_alpha);
 }
 
 // Convergence metric for a dv (0 = converged to the optimal front)

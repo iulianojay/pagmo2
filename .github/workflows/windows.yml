@@ -14,38 +14,22 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-      - name: Install vcpkg
-        run: |
-          git clone https://github.com/Microsoft/vcpkg.git
-          .\vcpkg\bootstrap-vcpkg.bat
-        shell: powershell
-      - name: Install base dependencies
-        run: |
-          .\vcpkg\vcpkg.exe install boost:x64-windows openblas:x64-windows
-        shell: powershell
       - name: Configure CMake
         run: |
-          mkdir build
-          cd build
-          cmake .. -G "Visual Studio 17 2022" -A x64 -T v143 `
-                   -DCMAKE_BUILD_TYPE=Release `
-                   -DCMAKE_TOOLCHAIN_FILE=..\vcpkg\scripts\buildsystems\vcpkg.cmake `
-                   -DPAGMO_BUILD_TESTS=ON `
-                   -DPAGMO_WITH_EIGEN3=OFF `
-                   -DPAGMO_WITH_NLOPT=OFF `
-                   -DPAGMO_WITH_IPOPT=OFF
+          cmake -B build/release -G "Visual Studio 17 2022" -A x64 `
+                -DCPM_SOURCE_CACHE="$PWD/build/_deps" `
+                -DPAGMO_BUILD_TESTS=ON `
+                -DPAGMO_WITH_EIGEN3=OFF `
+                -DPAGMO_WITH_NLOPT=OFF `
+                -DPAGMO_WITH_IPOPT=OFF
         shell: powershell
       - name: Build
-        run: |
-          cd build
-          cmake --build . --config Release --parallel
+        run: cmake --build build/release --config Release --parallel
         shell: powershell
       - name: Test
         run: |
-          cd build
-          ctest -VV --output-on-failure -j4 -C Release
+          $env:PATH = "$PWD\build\release\Release;$env:PATH"
+          ctest --test-dir build/release -C Release -j4 --output-on-failure
         shell: powershell
 
   windows-eigen3:
@@ -54,38 +38,22 @@ jobs:
     needs: windows-no-deps
     steps:
       - uses: actions/checkout@v4
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-      - name: Install vcpkg
-        run: |
-          git clone https://github.com/Microsoft/vcpkg.git
-          .\vcpkg\bootstrap-vcpkg.bat
-        shell: powershell
-      - name: Install dependencies
-        run: |
-          .\vcpkg\vcpkg.exe install eigen3:x64-windows boost:x64-windows openblas:x64-windows
-        shell: powershell
       - name: Configure CMake
         run: |
-          mkdir build
-          cd build
-          cmake .. -G "Visual Studio 17 2022" -A x64 -T v143 `
-                   -DCMAKE_BUILD_TYPE=Release `
-                   -DCMAKE_TOOLCHAIN_FILE=..\vcpkg\scripts\buildsystems\vcpkg.cmake `
-                   -DPAGMO_BUILD_TESTS=ON `
-                   -DPAGMO_WITH_EIGEN3=ON `
-                   -DPAGMO_WITH_NLOPT=OFF `
-                   -DPAGMO_WITH_IPOPT=OFF
+          cmake -B build/release -G "Visual Studio 17 2022" -A x64 `
+                -DCPM_SOURCE_CACHE="$PWD/build/_deps" `
+                -DPAGMO_BUILD_TESTS=ON `
+                -DPAGMO_WITH_EIGEN3=ON `
+                -DPAGMO_WITH_NLOPT=OFF `
+                -DPAGMO_WITH_IPOPT=OFF
         shell: powershell
       - name: Build
-        run: |
-          cd build
-          cmake --build . --config Release --parallel
+        run: cmake --build build/release --config Release --parallel
         shell: powershell
       - name: Test
         run: |
-          cd build
-          ctest -VV --output-on-failure -j4 -C Release
+          $env:PATH = "$PWD\build\release\Release;$env:PATH"
+          ctest --test-dir build/release -C Release -j4 --output-on-failure
         shell: powershell
 
   windows-nlopt:
@@ -94,196 +62,46 @@ jobs:
     needs: windows-no-deps
     steps:
       - uses: actions/checkout@v4
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-      - name: Install vcpkg
-        run: |
-          git clone https://github.com/Microsoft/vcpkg.git
-          .\vcpkg\bootstrap-vcpkg.bat
-        shell: powershell
-      - name: Install dependencies
-        run: |
-          .\vcpkg\vcpkg.exe install nlopt:x64-windows boost:x64-windows openblas:x64-windows
-        shell: powershell
       - name: Configure CMake
         run: |
-          mkdir build
-          cd build
-          cmake .. -G "Visual Studio 17 2022" -A x64 -T v143 `
-                   -DCMAKE_BUILD_TYPE=Release `
-                   -DCMAKE_TOOLCHAIN_FILE=..\vcpkg\scripts\buildsystems\vcpkg.cmake `
-                   -DPAGMO_BUILD_TESTS=ON `
-                   -DPAGMO_WITH_EIGEN3=OFF `
-                   -DPAGMO_WITH_NLOPT=ON `
-                   -DPAGMO_WITH_IPOPT=OFF
+          cmake -B build/release -G "Visual Studio 17 2022" -A x64 `
+                -DCPM_SOURCE_CACHE="$PWD/build/_deps" `
+                -DPAGMO_BUILD_TESTS=ON `
+                -DPAGMO_WITH_EIGEN3=OFF `
+                -DPAGMO_WITH_NLOPT=ON `
+                -DPAGMO_WITH_IPOPT=OFF
         shell: powershell
       - name: Build
-        run: |
-          cd build
-          cmake --build . --config Release --parallel
+        run: cmake --build build/release --config Release --parallel
         shell: powershell
       - name: Test
         run: |
-          cd build
-          ctest -VV --output-on-failure -j4 -C Release
-        shell: powershell
-
-  windows-ipopt:
-    name: Windows - With Ipopt
-    runs-on: windows-latest
-    needs: windows-no-deps
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-      - name: Install vcpkg
-        run: |
-          git clone https://github.com/Microsoft/vcpkg.git
-          .\vcpkg\bootstrap-vcpkg.bat
-        shell: powershell
-      - name: Install dependencies
-        run: |
-          .\vcpkg\vcpkg.exe install ipopt:x64-windows boost:x64-windows openblas:x64-windows
-        shell: powershell
-      - name: Configure CMake
-        run: |
-          mkdir build
-          cd build
-          cmake .. -G "Visual Studio 17 2022" -A x64 -T v143 `
-                   -DCMAKE_BUILD_TYPE=Release `
-                   -DCMAKE_TOOLCHAIN_FILE=..\vcpkg\scripts\buildsystems\vcpkg.cmake `
-                   -DPAGMO_BUILD_TESTS=ON `
-                   -DPAGMO_WITH_EIGEN3=OFF `
-                   -DPAGMO_WITH_NLOPT=OFF `
-                   -DPAGMO_WITH_IPOPT=ON
-        shell: powershell
-      - name: Build
-        run: |
-          cd build
-          cmake --build . --config Release --parallel
-        shell: powershell
-      - name: Test
-        run: |
-          cd build
-          ctest -VV --output-on-failure -j4 -C Release
+          $env:PATH = "$PWD\build\release\Release;$env:PATH"
+          ctest --test-dir build/release -C Release -j4 --output-on-failure
         shell: powershell
 
   windows-all-deps:
     name: Windows - All Dependencies
     runs-on: windows-latest
-    needs: [windows-eigen3, windows-nlopt, windows-ipopt]
+    needs: [windows-eigen3, windows-nlopt]
     steps:
       - uses: actions/checkout@v4
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-      - name: Install vcpkg
-        run: |
-          git clone https://github.com/Microsoft/vcpkg.git
-          .\vcpkg\bootstrap-vcpkg.bat
-        shell: powershell
-      - name: Install all dependencies
-        run: |
-          .\vcpkg\vcpkg.exe install eigen3:x64-windows nlopt:x64-windows ipopt:x64-windows boost:x64-windows openblas:x64-windows
-        shell: powershell
       - name: Configure CMake
         run: |
-          mkdir build
-          cd build
-          cmake .. -G "Visual Studio 17 2022" -A x64 -T v143 `
-                   -DCMAKE_BUILD_TYPE=Release `
-                   -DCMAKE_TOOLCHAIN_FILE=..\vcpkg\scripts\buildsystems\vcpkg.cmake `
-                   -DPAGMO_BUILD_TESTS=ON `
-                   -DPAGMO_BUILD_TUTORIALS=ON `
-                   -DPAGMO_WITH_EIGEN3=ON `
-                   -DPAGMO_WITH_NLOPT=ON `
-                   -DPAGMO_WITH_IPOPT=ON `
-                   -DPAGMO_ENABLE_IPO=ON
+          cmake -B build/release -G "Visual Studio 17 2022" -A x64 `
+                -DCPM_SOURCE_CACHE="$PWD/build/_deps" `
+                -DPAGMO_BUILD_TESTS=ON `
+                -DPAGMO_BUILD_TUTORIALS=ON `
+                -DPAGMO_WITH_EIGEN3=ON `
+                -DPAGMO_WITH_NLOPT=ON `
+                -DPAGMO_WITH_IPOPT=OFF `
+                -DPAGMO_ENABLE_IPO=ON
         shell: powershell
       - name: Build
-        run: |
-          cd build
-          cmake --build . --config Release --parallel --target install
+        run: cmake --build build/release --config Release --parallel
         shell: powershell
       - name: Test
         run: |
-          cd build
-          ctest -VV --output-on-failure -j4 -C Release
-        shell: powershell
-
-  windows-msvc-vcpkg:
-    name: Windows - MSVC with vcpkg
-    runs-on: windows-latest
-    needs: windows-all-deps
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup vcpkg
-        uses: microsoft/setup-msbuild@v2
-      - name: Install vcpkg
-        run: |
-          git clone https://github.com/Microsoft/vcpkg.git
-          .\vcpkg\bootstrap-vcpkg.bat
-      - name: Install dependencies with vcpkg
-        run: |
-          .\vcpkg\vcpkg.exe install eigen3:x64-windows nlopt:x64-windows boost:x64-windows openblas:x64-windows
-      - name: Configure CMake
-        run: |
-          mkdir build
-          cd build
-          cmake .. -G "Visual Studio 17 2022" -A x64 `
-                   -DCMAKE_BUILD_TYPE=Release `
-                   -DCMAKE_TOOLCHAIN_FILE=..\vcpkg\scripts\buildsystems\vcpkg.cmake `
-                   -DPAGMO_BUILD_TESTS=ON `
-                   -DPAGMO_WITH_EIGEN3=ON `
-                   -DPAGMO_WITH_NLOPT=ON `
-                   -DPAGMO_WITH_IPOPT=OFF
-        shell: powershell
-      - name: Build
-        run: |
-          cd build
-          cmake --build . --config Release --parallel
-        shell: powershell
-      - name: Test
-        run: |
-          cd build
-          ctest -VV --output-on-failure -j4 -C Release
-        shell: powershell
-
-  windows-debug:
-    name: Windows - Debug Build with All Dependencies
-    runs-on: windows-latest
-    needs: windows-all-deps
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-      - name: Install vcpkg
-        run: |
-          git clone https://github.com/Microsoft/vcpkg.git
-          .\vcpkg\bootstrap-vcpkg.bat
-        shell: powershell
-      - name: Install all dependencies
-        run: |
-          .\vcpkg\vcpkg.exe install eigen3:x64-windows nlopt:x64-windows ipopt:x64-windows boost:x64-windows openblas:x64-windows
-        shell: powershell
-      - name: Configure CMake
-        run: |
-          mkdir build
-          cd build
-          cmake .. -G "Visual Studio 17 2022" -A x64 -T v143 `
-                   -DCMAKE_BUILD_TYPE=Debug `
-                   -DCMAKE_TOOLCHAIN_FILE=..\vcpkg\scripts\buildsystems\vcpkg.cmake `
-                   -DPAGMO_BUILD_TESTS=ON `
-                   -DPAGMO_WITH_EIGEN3=ON `
-                   -DPAGMO_WITH_NLOPT=ON `
-                   -DPAGMO_WITH_IPOPT=ON
-        shell: powershell
-      - name: Build
-        run: |
-          cd build
-          cmake --build . --config Debug --parallel
-        shell: powershell
-      - name: Test
-        run: |
-          cd build
-          ctest -VV --output-on-failure -j4 -C Debug
+          $env:PATH = "$PWD\build\release\Release;$env:PATH"
+          ctest --test-dir build/release -C Release -j4 --output-on-failure
         shell: powershell

@@ -54,12 +54,6 @@ std::string unconnected::get_name() const
     return "Unconnected";
 }
 
-// Serialization.
-template <typename Archive>
-void unconnected::serialize(Archive &, unsigned)
-{
-}
-
 } // namespace pagmo
 
 PAGMO_S11N_TOPOLOGY_IMPLEMENT(pagmo::unconnected)

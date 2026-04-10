@@ -31,14 +31,13 @@ see https://www.gnu.org/licenses/. */
 #include <iomanip>
 #include <iostream>
 #include <iterator>
+#include <numbers>
 #include <numeric>
 #include <random>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
-
-#include <boost/math/constants/constants.hpp>
 
 #include <pagmo/algorithm.hpp>
 #include <pagmo/algorithms/maco.hpp>
@@ -57,10 +56,6 @@ see https://www.gnu.org/licenses/. */
 #include <pagmo/utils/hypervolume.hpp>
 #include <pagmo/utils/multi_objective.hpp>
 
-// NOTE: apparently this must be included *after*
-// the other serialization headers.
-#include <boost/serialization/optional.hpp>
-
 namespace pagmo
 {
 
@@ -71,16 +66,16 @@ maco::maco(unsigned gen, unsigned ker, double q, unsigned threshold, unsigned n_
       m_n_evalstop(0u), m_gen_mark(1u), m_pop()
 {
     if (focus < 0.) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "The focus parameter must be >=0  while a value of " + std::to_string(focus) + " was detected");
     }
     if ((threshold < 1 || threshold > gen) && gen != 0 && memory == false) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "If memory is inactive, the threshold parameter must be either in [1,m_gen] while a value of "
                         + std::to_string(threshold) + " was detected");
     }
     if (threshold < 1 && gen != 0 && memory == true) {
-        pagmo_throw(std::invalid_argument, "If memory is active, the threshold parameter must be >=1 while a value of "
+        pagmo_throw(invalid_parameter_error, "If memory is active, the threshold parameter must be >=1 while a value of "
                                                + std::to_string(threshold) + " was detected");
     }
 }
@@ -126,10 +121,10 @@ population maco::evolve(population pop) const
     // We start by checking that the problem is suitable for this
     // particular algorithm.
     if (!pop_size) {
-        pagmo_throw(std::invalid_argument, get_name() + " cannot work on an empty population");
+        pagmo_throw(insufficient_population_error, get_name() + " cannot work on an empty population");
     }
     if (prob.is_stochastic()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "The problem appears to be stochastic " + get_name() + " cannot deal with it");
     }
     if (m_gen == 0u) {
@@ -137,15 +132,15 @@ population maco::evolve(population pop) const
     }
     // I verify that the solution archive is smaller or equal than the population size
     if (m_ker > pop_size) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     get_name() + " cannot work with a solution archive bigger than the population size");
     }
     if (prob.get_nc() != 0u) {
-        pagmo_throw(std::invalid_argument, "Non linear constraints detected in " + prob.get_name() + " instance. "
+        pagmo_throw(incompatible_problem_error, "Non linear constraints detected in " + prob.get_name() + " instance. "
                                                + get_name() + " cannot deal with them.");
     }
     if (prob.get_nf() < 2u) {
-        pagmo_throw(std::invalid_argument, "This is a multiobjective algorithm, while number of objectives detected in "
+        pagmo_throw(incompatible_problem_error, "This is a multiobjective algorithm, while number of objectives detected in "
                                                + prob.get_name() + " is " + std::to_string(prob.get_nf()));
     }
     // ---------------------------------------------------------------------------------------------------------
@@ -415,40 +410,40 @@ population maco::evolve(population pop) const
                 if (m_memory == false) {
                     // Every 50 lines print the column names
                     if (count_screen % 50u == 1u) {
-                        print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:");
+                        pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:");
                         for (decltype(ideal_point_sol_arch.size()) i = 0u; i < ideal_point_sol_arch.size(); ++i) {
                             if (i >= 5u) {
-                                print(std::setw(15), "... :");
+                                pagmo::print(std::setw(15), "... :");
                                 break;
                             }
-                            print(std::setw(15), "ideal" + std::to_string(i + 1u) + ":");
+                            pagmo::print(std::setw(15), "ideal" + std::to_string(i + 1u) + ":");
                         }
-                        print('\n');
+                        pagmo::print('\n');
                     }
                 } else if ((m_memory == true && m_counter == 1) || (m_memory == true && m_counter % 50u == 1u)) {
-                    print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:");
+                    pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:");
                     for (decltype(ideal_point_sol_arch.size()) i = 0u; i < ideal_point_sol_arch.size(); ++i) {
                         if (i >= 5u) {
-                            print(std::setw(15), "... :");
+                            pagmo::print(std::setw(15), "... :");
                             break;
                         }
-                        print(std::setw(15), "ideal" + std::to_string(i + 1u) + ":");
+                        pagmo::print(std::setw(15), "ideal" + std::to_string(i + 1u) + ":");
                     }
-                    print('\n');
+                    pagmo::print('\n');
                 }
                 if (m_memory == false) {
-                    print(std::setw(7), gen, std::setw(15), prob.get_fevals() - fevals0);
+                    pagmo::print(std::setw(7), gen, std::setw(15), prob.get_fevals() - fevals0);
 
                 } else {
-                    print(std::setw(7), gen, std::setw(15), prob.get_fevals());
+                    pagmo::print(std::setw(7), gen, std::setw(15), prob.get_fevals());
                 }
                 for (decltype(ideal_point_sol_arch.size()) i = 0u; i < ideal_point_sol_arch.size(); ++i) {
                     if (i >= 5u) {
                         break;
                     }
-                    print(std::setw(15), ideal_point_sol_arch[i]);
+                    pagmo::print(std::setw(15), ideal_point_sol_arch[i]);
                 }
-                print('\n');
+                pagmo::print('\n');
                 ++count_screen;
                 // Logs
                 if (m_memory == false) {
@@ -565,14 +560,6 @@ std::string maco::get_extra_info() const
     return ss.str();
 }
 
-// Object serialization
-template <typename Archive>
-void maco::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, m_gen, m_focus, m_ker, m_evalstop, m_e, m_seed, m_verbosity, m_log, m_threshold, m_q,
-                    m_n_gen_mark, m_memory, m_counter, m_sol_archive, m_n_evalstop, m_gen_mark, m_bfe);
-}
-
 // Function which computes the pheromone values (useful for generating offspring)
 void maco::pheromone_computation(const unsigned gen, vector_double &prob_cumulative, vector_double &omega_vec,
                                  vector_double &sigma_vec, const population &popul,
@@ -597,7 +584,7 @@ void maco::pheromone_computation(const unsigned gen, vector_double &prob_cumulat
             double sum_omega = 0;
 
             for (decltype(m_ker) l = 1; l <= m_ker; ++l) {
-                omega_new = 1.0 / (m_q * m_ker * std::sqrt(2 * boost::math::constants::pi<double>()))
+                omega_new = 1.0 / (m_q * m_ker * std::sqrt(2 * std::numbers::pi))
                             * std::exp(-std::pow(l - 1.0, 2) / (2.0 * std::pow(m_q, 2) * std::pow(m_ker, 2)));
                 omega_vec[l - 1] = omega_new;
                 sum_omega += omega_new;
@@ -620,7 +607,7 @@ void maco::pheromone_computation(const unsigned gen, vector_double &prob_cumulat
         double sum_omega = 0;
 
         for (decltype(m_ker) l = 1; l <= m_ker; ++l) {
-            omega_new = 1.0 / (m_q * m_ker * std::sqrt(2 * boost::math::constants::pi<double>()))
+            omega_new = 1.0 / (m_q * m_ker * std::sqrt(2 * std::numbers::pi))
                         * std::exp(-std::pow(l - 1.0, 2) / (2.0 * std::pow(m_q, 2) * std::pow(m_ker, 2)));
             omega_vec[l - 1] = omega_new;
             sum_omega += omega_new;

@@ -287,10 +287,11 @@ population::size_type population::best_idx() const
 population::size_type population::best_idx(const vector_double &tol) const
 {
     if (!size()) {
-        pagmo_throw(std::invalid_argument, "Cannot determine the best individual of an empty population");
+        pagmo_throw(empty_collection_error, "Cannot determine the best individual of an empty population");
     }
     if (m_prob.get_nobj() > 1u) {
-        pagmo_throw(std::invalid_argument, "The best individual can only be extracted in single objective problems");
+        pagmo_throw(incompatible_problem_error,
+                    "The best individual can only be extracted in single objective problems");
     }
     if (m_prob.get_nc() > 0u) { // TODO: should we also code a min_element_population_con?
         return sort_population_con(m_f, m_prob.get_nec(), tol)[0];
@@ -302,9 +303,9 @@ population::size_type population::best_idx(const vector_double &tol) const
     // NOTE: size - 1 is fine, as we know that here size cannot be zero.
     // LCOV_EXCL_START
     if (m_f.size() - 1u > static_cast<it_udiff_t>(std::numeric_limits<it_diff_t>::max())) {
-        pagmo_throw(std::overflow_error, "The size of the population, " + std::to_string(m_f.size())
-                                             + ", is too large, and it results in an overflow condition when "
-                                               "trying to determine the index of the best individual");
+        pagmo_throw(size_limit_error, "The size of the population, " + std::to_string(m_f.size())
+                                          + ", is too large, and it results in an overflow condition when "
+                                            "trying to determine the index of the best individual");
     }
     // LCOV_EXCL_STOP
     return static_cast<size_type>(std::min_element(m_f.begin(), m_f.end()) - m_f.begin());
@@ -371,10 +372,10 @@ population::size_type population::worst_idx() const
 population::size_type population::worst_idx(const vector_double &tol) const
 {
     if (!size()) {
-        pagmo_throw(std::invalid_argument, "Cannot determine the worst element of an empty population");
+        pagmo_throw(empty_collection_error, "Cannot determine the worst element of an empty population");
     }
     if (m_prob.get_nobj() > 1u) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(incompatible_problem_error,
                     "The worst element of a population can only be extracted in single objective problems");
     }
     if (m_prob.get_nc() > 0u) { // TODO: should we also code a min_element_population_con?
@@ -387,9 +388,9 @@ population::size_type population::worst_idx(const vector_double &tol) const
     // NOTE: size - 1 is fine, as we know that here size cannot be zero.
     // LCOV_EXCL_START
     if (m_f.size() - 1u > static_cast<it_udiff_t>(std::numeric_limits<it_diff_t>::max())) {
-        pagmo_throw(std::overflow_error, "The size of the population, " + std::to_string(m_f.size())
-                                             + ", is too large, and it results in an overflow condition when "
-                                               "trying to determine the index of the worst individual");
+        pagmo_throw(size_limit_error, "The size of the population, " + std::to_string(m_f.size())
+                                          + ", is too large, and it results in an overflow condition when "
+                                            "trying to determine the index of the worst individual");
     }
     // LCOV_EXCL_STOP
     return static_cast<size_type>(std::max_element(m_f.begin(), m_f.end()) - m_f.begin());
@@ -427,11 +428,11 @@ population::size_type population::worst_idx(double tol) const
 vector_double population::champion_x() const
 {
     if (m_prob.get_nobj() > 1u) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(incompatible_problem_error,
                     "The Champion of a population can only be extracted in single objective problems");
     }
     if (m_prob.is_stochastic()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(incompatible_problem_error,
                     "The Champion of a population can only be extracted for non stochastic problems");
     }
     return m_champion_x;
@@ -455,11 +456,11 @@ vector_double population::champion_x() const
 vector_double population::champion_f() const
 {
     if (m_prob.get_nobj() > 1u) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(incompatible_problem_error,
                     "The Champion of a population can only be extracted in single objective problems");
     }
     if (m_prob.is_stochastic()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(incompatible_problem_error,
                     "The Champion of a population can only be extracted for non stochastic problems");
     }
     return m_champion_f;
@@ -490,16 +491,16 @@ vector_double population::champion_f() const
 void population::set_xf(size_type i, const vector_double &x, const vector_double &f)
 {
     if (i >= size()) {
-        pagmo_throw(std::invalid_argument, "Trying to access individual at position: " + std::to_string(i)
-                                               + ", while population has size: " + std::to_string(size()));
+        pagmo_throw(index_error, "Trying to access individual at position: " + std::to_string(i)
+                                     + ", while population has size: " + std::to_string(size()));
     }
     if (f.size() != m_prob.get_nf()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(dimension_mismatch_error,
                     "Trying to set a fitness of dimension: " + std::to_string(f.size())
                         + ", while the problem's fitness has dimension: " + std::to_string(m_prob.get_nf()));
     }
     if (x.size() != m_prob.get_nx()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(dimension_mismatch_error,
                     "Trying to set a decision vector of dimension: " + std::to_string(x.size())
                         + ", while the problem's dimension is: " + std::to_string(m_prob.get_nx()));
     }
@@ -571,20 +572,20 @@ void population::push_back_impl(T &&x, U &&f)
 {
     // Checks on the input vectors.
     if (x.size() != m_prob.get_nx()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(dimension_mismatch_error,
                     "Trying to add a decision vector of dimension: " + std::to_string(x.size())
                         + ", while the problem's dimension is: " + std::to_string(m_prob.get_nx()));
     }
     if (f.size() != m_prob.get_nf()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(dimension_mismatch_error,
                     "Trying to add a fitness of dimension: " + std::to_string(f.size())
                         + ", while the problem's fitness has dimension: " + std::to_string(m_prob.get_nf()));
     }
     // LCOV_EXCL_START
     if (m_ID.size() == std::numeric_limits<decltype(m_ID.size())>::max()
         || m_x.size() == std::numeric_limits<decltype(m_x.size())>::max()) {
-        pagmo_throw(std::overflow_error, "Cannot add a new individual to this population: the maximum number of "
-                                         "individuals per population has been reached");
+        pagmo_throw(size_limit_error, "Cannot add a new individual to this population: the maximum number of "
+                                      "individuals per population has been reached");
     }
     // LCOV_EXCL_STOP
 

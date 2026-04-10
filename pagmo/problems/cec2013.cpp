@@ -29,11 +29,10 @@ see https://www.gnu.org/licenses/. */
 #include <cassert>
 #include <cmath>
 #include <cstdlib>
+#include <numbers>
 #include <stdexcept>
 #include <string>
 #include <utility>
-
-#include <boost/math/constants/constants.hpp>
 
 #include <pagmo/detail/constants.hpp>
 #include <pagmo/exceptions.hpp>
@@ -52,12 +51,12 @@ cec2013::cec2013(unsigned prob_id, unsigned dim)
 {
     if (!(dim == 2u || dim == 5u || dim == 10u || dim == 20u || dim == 30u || dim == 40u || dim == 50u || dim == 60u
           || dim == 70u || dim == 80u || dim == 90u || dim == 100u)) {
-        pagmo_throw(std::invalid_argument, "Error: CEC2013 Test functions are only defined for dimensions "
+        pagmo_throw(problem_config_error, "Error: CEC2013 Test functions are only defined for dimensions "
                                            "2,5,10,20,30,40,50,60,70,80,90,100, a dimension of "
                                                + std::to_string(dim) + " was detected.");
     }
     if (prob_id < 1u || prob_id > 28u) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(problem_config_error,
                     "Error: CEC2013 Test functions are only defined for prob_id in [1, 28], a prob_id of "
                         + std::to_string(prob_id) + " was detected.");
     }
@@ -307,13 +306,6 @@ std::string cec2013::get_name() const
     return retval;
 }
 
-// Object serialization
-template <typename Archive>
-void cec2013::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, m_prob_id, m_rotation_matrix, m_origin_shift, m_y, m_z);
-}
-
 // For the coverage analysis we do not cover the code below as its derived from a third party source
 // LCOV_EXCL_START
 void cec2013::sphere_func(const double *x, double *f, const unsigned nx, const double *Os, const double *Mr,
@@ -495,7 +487,7 @@ void cec2013::ackley_func(const double *x, double *f, const unsigned nx, const d
     }
     sum1 = -0.2 * std::sqrt(sum1 / nx);
     sum2 /= nx;
-    f[0] = boost::math::constants::e<double>() - 20.0 * std::exp(sum1) - std::exp(sum2) + 20.0;
+    f[0] = std::exp(1.0) - 20.0 * std::exp(sum1) - std::exp(sum2) + 20.0;
 }
 
 void cec2013::weierstrass_func(const double *x, double *f, const unsigned nx, const double *Os, const double *Mr,

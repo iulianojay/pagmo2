@@ -31,12 +31,11 @@ see https://www.gnu.org/licenses/. */
 #include <initializer_list>
 #include <iostream>
 #include <iterator>
+#include <numbers>
 #include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
-
-#include <boost/math/constants/constants.hpp>
 
 #include <pagmo/detail/constants.hpp>
 #include <pagmo/exceptions.hpp>
@@ -62,29 +61,29 @@ wfg::wfg(unsigned prob_id, vector_double::size_type dim_dvs, vector_double::size
 {
 
     if (prob_id == 0u || prob_id > 9u) {
-        pagmo_throw(std::invalid_argument, "WFG test suite contains nine (prob_id=[1 ... 9]) problems, prob_id="
+        pagmo_throw(problem_config_error, "WFG test suite contains nine (prob_id=[1 ... 9]) problems, prob_id="
                                                + std::to_string(prob_id) + " was detected");
     }
     if (dim_dvs < 1u) {
-        pagmo_throw(std::invalid_argument, "WFG problem suite must have minimum 1 dimension for the decision vector, "
+        pagmo_throw(problem_config_error, "WFG problem suite must have minimum 1 dimension for the decision vector, "
                                                + std::to_string(dim_dvs) + " requested");
     }
 
     if (dim_obj < 2u) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(problem_config_error,
                     "WFG test problems must have a minimum value of 2 for the objective vector dimension, "
                         + std::to_string(dim_obj) + " requested");
     }
 
     if (dim_k >= dim_dvs || dim_k < 1 || dim_k % (dim_obj - 1) != 0) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(problem_config_error,
                     "WFG test problems must have a dim_k parameter which is within [1,dim_dvs), and such that dim_k "
                     "mod(dim_obj-1) == 0 "
                         + std::to_string(dim_k) + " requested");
     }
     if (prob_id == 2u || prob_id == 3u) {
         if ((dim_dvs - dim_k) % 2 != 0) {
-            pagmo_throw(std::invalid_argument,
+            pagmo_throw(problem_config_error,
                         "For problems WFG2 and WFG3 the dim_k parameter and the decision vector size must satisfy "
                         "(dim_dvs-dim_k) mod(2)=0"
                             + std::to_string((dim_dvs - dim_k) % 2) + " was detected");
@@ -150,13 +149,6 @@ std::string wfg::get_name() const
     return "WFG" + std::to_string(m_prob_id);
 }
 
-// Object serialization
-template <typename Archive>
-void wfg::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, m_prob_id, m_dim_dvs, m_dim_obj, m_dim_k);
-}
-
 // We first define the shape functions (we assume that m varies from 1 to m_dim_obj):
 double wfg::linear(const vector_double &parameters, const vector_double::size_type m) const
 {
@@ -181,14 +173,14 @@ double wfg::convex(const vector_double &parameters, const vector_double::size_ty
     double g = 1.;
     if (m == 1) {
         for (decltype(m_dim_obj) i = 0u; i < m_dim_obj - 1; ++i) {
-            g *= 1.0 - std::cos(parameters[i] * boost::math::constants::pi<double>() / 2.0);
+            g *= 1.0 - std::cos(parameters[i] * std::numbers::pi / 2.0);
         }
         return g;
     } else {
         for (decltype(m_dim_obj) i = 0u; i < m_dim_obj - m; ++i) {
-            g *= 1.0 - std::cos(parameters[i] * boost::math::constants::pi<double>() / 2.0);
+            g *= 1.0 - std::cos(parameters[i] * std::numbers::pi / 2.0);
         }
-        return g * (1 - std::sin(parameters[m_dim_obj - m] * boost::math::constants::pi<double>() / 2.0));
+        return g * (1 - std::sin(parameters[m_dim_obj - m] * std::numbers::pi / 2.0));
     }
 }
 
@@ -197,25 +189,24 @@ double wfg::concave(const vector_double &parameters, const vector_double::size_t
     double g = 1.;
     if (m == 1) {
         for (decltype(m_dim_obj) i = 0u; i < m_dim_obj - 1; ++i) {
-            g *= std::sin(parameters[i] * boost::math::constants::pi<double>() / 2.0);
+            g *= std::sin(parameters[i] * std::numbers::pi / 2.0);
         }
         return g;
     } else if (m > 1 && m < m_dim_obj) {
         for (decltype(m_dim_obj) i = 0u; i < m_dim_obj - m; ++i) {
-            g *= std::sin(parameters[i] * boost::math::constants::pi<double>() / 2.0);
+            g *= std::sin(parameters[i] * std::numbers::pi / 2.0);
         }
-        return g * std::cos(parameters[m_dim_obj - m] * boost::math::constants::pi<double>() / 2.0);
+        return g * std::cos(parameters[m_dim_obj - m] * std::numbers::pi / 2.0);
     } else {
-        return std::cos(parameters[0] * boost::math::constants::pi<double>() / 2.0);
+        return std::cos(parameters[0] * std::numbers::pi / 2.0);
     }
 }
 
 double wfg::mixed(const double parameters_0, const double alpha, const double deg_const) const
 {
     return std::pow((1.0 - parameters_0
-                     - std::cos(2 * deg_const * boost::math::constants::pi<double>() * parameters_0
-                                + boost::math::constants::pi<double>() / 2.0)
-                           / (2.0 * deg_const * boost::math::constants::pi<double>())),
+                     - std::cos(2 * deg_const * std::numbers::pi * parameters_0 + std::numbers::pi / 2.0)
+                           / (2.0 * deg_const * std::numbers::pi)),
                     alpha);
 }
 
@@ -223,8 +214,7 @@ double wfg::disconnected(const double parameters_0, const double alpha, const do
 {
     return 1.0
            - std::pow(parameters_0, alpha)
-                 * std::pow(std::cos(deg_const * std::pow(parameters_0, beta) * boost::math::constants::pi<double>()),
-                            2);
+                 * std::pow(std::cos(deg_const * std::pow(parameters_0, beta) * std::numbers::pi), 2);
 }
 
 // We now define the transformation functions:
@@ -264,7 +254,7 @@ double wfg::s_decept(const double y, const double a_par, const double b_par, con
 double wfg::s_multi(const double y, const double a_par, const double b_par, const double c_par) const
 {
     return (1
-            + std::cos((4.0 * a_par + 2.0) * boost::math::constants::pi<double>()
+            + std::cos((4.0 * a_par + 2.0) * std::numbers::pi
                        * (0.5 - (std::abs(y - c_par)) / (2.0 * (std::floor(c_par - y) + c_par))))
             + 4.0 * b_par * std::pow(std::abs(y - c_par) / (2 * (std::floor(c_par - y) + c_par)), 2))
            / (b_par + 2.0);

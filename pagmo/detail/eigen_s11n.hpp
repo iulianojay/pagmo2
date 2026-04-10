@@ -32,54 +32,43 @@ see https://www.gnu.org/licenses/. */
 #include <pagmo/detail/eigen.hpp>
 #include <pagmo/s11n.hpp>
 
-// Boost.serialization support for Eigen::Matrix.
-namespace boost
+// Cereal serialization support for Eigen::Matrix.
+namespace cereal
 {
 
-namespace serialization
-{
-
-// Implement the serialization of the Eigen::Matrix class
 template <class Archive, class S, int R, int C, int O, int MR, int MC>
-inline void save(Archive &ar, Eigen::Matrix<S, R, C, O, MR, MC> const &cb, unsigned)
+inline void save(Archive &ar, Eigen::Matrix<S, R, C, O, MR, MC> const &cb)
 {
     // Let's first save the dimension
     auto nrows = cb.rows();
     auto ncols = cb.cols();
-    ar << nrows;
-    ar << ncols;
+    ar(nrows);
+    ar(ncols);
     // And then the numbers
     for (decltype(nrows) i = 0; i < nrows; ++i) {
         for (decltype(nrows) j = 0; j < ncols; ++j) {
-            ar << cb(i, j);
+            ar(cb(i, j));
         }
     }
 }
+
 template <class Archive, class S, int R, int C, int O, int MR, int MC>
-inline void load(Archive &ar, Eigen::Matrix<S, R, C, O, MR, MC> &cb, unsigned)
+inline void load(Archive &ar, Eigen::Matrix<S, R, C, O, MR, MC> &cb)
 {
     decltype(cb.rows()) nrows;
     decltype(cb.cols()) ncols;
     // Let's first restore the dimension
-    ar >> nrows;
-    ar >> ncols;
+    ar(nrows);
+    ar(ncols);
     cb.resize(nrows, ncols);
     // And then the numbers
     for (decltype(nrows) i = 0; i < nrows; ++i) {
         for (decltype(nrows) j = 0; j < ncols; ++j) {
-            ar >> cb(i, j);
+            ar(cb(i, j));
         }
     }
 }
 
-template <class Archive, class S, int R, int C, int O, int MR, int MC>
-inline void serialize(Archive &ar, Eigen::Matrix<S, R, C, O, MR, MC> &cb, unsigned version)
-{
-    split_free(ar, cb, version);
-}
-
-} // namespace serialization
-
-} // namespace boost
+} // namespace cereal
 
 #endif

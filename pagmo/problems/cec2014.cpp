@@ -29,11 +29,10 @@ see https://www.gnu.org/licenses/. */
 #include <cmath>
 #include <cstdlib>
 #include <limits>
+#include <numbers>
 #include <stdexcept>
 #include <string>
 #include <utility>
-
-#include <boost/math/constants/constants.hpp>
 
 #include <pagmo/exceptions.hpp>
 #include <pagmo/problem.hpp>
@@ -49,18 +48,18 @@ namespace pagmo
 cec2014::cec2014(unsigned prob_id, unsigned dim) : m_z(dim), m_y(dim), func_num(prob_id)
 {
     if (!(dim == 2u || dim == 10u || dim == 20u || dim == 30u || dim == 50u || dim == 100u)) {
-        pagmo_throw(std::invalid_argument, "Error: CEC2014 Test functions are only defined for dimensions "
+        pagmo_throw(problem_config_error, "Error: CEC2014 Test functions are only defined for dimensions "
                                            "2,10,20,30,50,100, a dimension of "
                                                + std::to_string(dim) + " was detected.");
     }
     if (prob_id < 1u || prob_id > 30u) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(problem_config_error,
                     "Error: CEC2014 Test functions are only defined for prob_id in [1, 28], a prob_id of "
                         + std::to_string(prob_id) + " was detected.");
     }
 
     if (dim == 2 && ((func_num >= 17u && func_num <= 22u) || (func_num >= 29u && func_num <= 30u))) {
-        pagmo_throw(std::invalid_argument, "hf01,hf02,hf03,hf04,hf05,hf06,cf07&cf08 are NOT defined for D=2.");
+        pagmo_throw(problem_config_error, "hf01,hf02,hf03,hf04,hf05,hf06,cf07&cf08 are NOT defined for D=2.");
     }
 
     /* Load Rotation Matrix */
@@ -349,13 +348,6 @@ std::string cec2014::get_name() const
     return retval;
 }
 
-// Object serialization
-template <typename Archive>
-void cec2014::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, func_num, m_rotation_matrix, m_origin_shift, m_shuffle, m_y, m_z);
-}
-
 // For the coverage analysis we do not cover the code below as its derived from a third party source
 // LCOV_EXCL_START
 /* Sphere */
@@ -475,11 +467,11 @@ void cec2014::ackley_func(const double *x, double *f, const unsigned nx, const d
 
     for (i = 0; i < nx; i++) {
         sum1 += m_z[i] * m_z[i];
-        sum2 += std::cos(2.0 * boost::math::constants::pi<double>() * m_z[i]);
+        sum2 += std::cos(2.0 * std::numbers::pi * m_z[i]);
     }
     sum1 = -0.2 * std::sqrt(sum1 / nx);
     sum2 /= nx;
-    f[0] = boost::math::constants::e<double>() - 20.0 * std::exp(sum1) - std::exp(sum2) + 20.0;
+    f[0] = std::exp(1.0) - 20.0 * std::exp(sum1) - std::exp(sum2) + 20.0;
 }
 
 /* Weierstrass's  */
@@ -501,9 +493,8 @@ void cec2014::weierstrass_func(const double *x, double *f, const unsigned nx, co
         sum = 0.0;
         sum2 = 0.0;
         for (j = 0; j <= k_max; j++) {
-            sum += std::pow(a, j)
-                   * std::cos(2.0 * boost::math::constants::pi<double>() * std::pow(b, j) * (m_z[i] + 0.5));
-            sum2 += std::pow(a, j) * std::cos(2.0 * boost::math::constants::pi<double>() * std::pow(b, j) * 0.5);
+            sum += std::pow(a, j) * std::cos(2.0 * std::numbers::pi * std::pow(b, j) * (m_z[i] + 0.5));
+            sum2 += std::pow(a, j) * std::cos(2.0 * std::numbers::pi * std::pow(b, j) * 0.5);
         }
         f[0] += sum;
     }
@@ -540,7 +531,7 @@ void cec2014::rastrigin_func(const double *x, double *f, const unsigned nx, cons
     sr_func(x, m_z.data(), nx, Os, Mr, 5.12 / 100.0, s_flag, r_flag); /* shift and rotate */
 
     for (i = 0; i < nx; i++) {
-        f[0] += (m_z[i] * m_z[i] - 10.0 * std::cos(2.0 * boost::math::constants::pi<double>() * m_z[i]) + 10.0);
+        f[0] += (m_z[i] * m_z[i] - 10.0 * std::cos(2.0 * std::numbers::pi * m_z[i]) + 10.0);
     }
 }
 
@@ -558,7 +549,7 @@ void cec2014::step_rastrigin_func(const double *x, double *f, const unsigned nx,
     sr_func(x, m_z.data(), nx, Os, Mr, 5.12 / 100.0, s_flag, r_flag); /* shift and rotate */
 
     for (i = 0; i < nx; i++) {
-        f[0] += (m_z[i] * m_z[i] - 10.0 * std::cos(2.0 * boost::math::constants::pi<double>() * m_z[i]) + 10.0);
+        f[0] += (m_z[i] * m_z[i] - 10.0 * std::cos(2.0 * std::numbers::pi * m_z[i]) + 10.0);
     }
 }
 
@@ -666,7 +657,7 @@ void cec2014::bi_rastrigin_func(const double *x, double *f, const unsigned nx, c
     if (r_flag == 1) {
         rotatefunc(m_z.data(), m_y.data(), nx, Mr);
         for (i = 0; i < nx; i++) {
-            tmp += std::cos(2.0 * boost::math::constants::pi<double>() * m_y[i]);
+            tmp += std::cos(2.0 * std::numbers::pi * m_y[i]);
         }
         if (tmp1 < tmp2) {
             f[0] = tmp1;
@@ -676,7 +667,7 @@ void cec2014::bi_rastrigin_func(const double *x, double *f, const unsigned nx, c
         f[0] += 10.0 * (nx - tmp);
     } else {
         for (i = 0; i < nx; i++) {
-            tmp += std::cos(2.0 * boost::math::constants::pi<double>() * m_z[i]);
+            tmp += std::cos(2.0 * std::numbers::pi * m_z[i]);
         }
         if (tmp1 < tmp2) {
             f[0] = tmp1;

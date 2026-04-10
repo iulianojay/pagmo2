@@ -167,7 +167,7 @@ std::shared_ptr<hv_algorithm> hv2d::clone() const
 void hv2d::verify_before_compute(const std::vector<vector_double> &points, const vector_double &r_point) const
 {
     if (r_point.size() != 2u) {
-        pagmo_throw(std::invalid_argument, "Algorithm hv2d works only for 2-dimensional cases.");
+        pagmo_throw(problem_config_error, "Algorithm hv2d works only for 2-dimensional cases.");
     }
 
     hv_algorithm::assert_minimisation(points, r_point);

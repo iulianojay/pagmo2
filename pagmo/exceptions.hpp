@@ -125,6 +125,154 @@ namespace pagmo
 struct PAGMO_DLL_PUBLIC_INLINE_CLASS not_implemented_error final : std::runtime_error {
     using std::runtime_error::runtime_error;
 };
+
+/// Base class for PaGMO-specific exceptions.
+/**
+ * All specialized PaGMO exceptions inherit from this base class.
+ */
+struct PAGMO_DLL_PUBLIC_INLINE_CLASS pagmo_exception : std::runtime_error {
+    using std::runtime_error::runtime_error;
+};
+
+/// Exception for index/range out of bounds errors.
+/**
+ * Thrown when accessing collections (archipelago islands, population individuals, etc.)
+ * with invalid indices.
+ */
+struct PAGMO_DLL_PUBLIC_INLINE_CLASS index_error final : pagmo_exception {
+    using pagmo_exception::pagmo_exception;
+};
+
+/// Exception for operations on empty collections.
+/**
+ * Thrown when operations require non-empty collections but empty ones are provided
+ * (e.g., finding best individual in empty population).
+ */
+struct PAGMO_DLL_PUBLIC_INLINE_CLASS empty_collection_error final : pagmo_exception {
+    using pagmo_exception::pagmo_exception;
+};
+
+/// Exception for dimension/size mismatches.
+/**
+ * Thrown when dimensions don't match expectations (e.g., bounds vectors, fitness dimensions).
+ */
+struct PAGMO_DLL_PUBLIC_INLINE_CLASS dimension_mismatch_error final : pagmo_exception {
+    using pagmo_exception::pagmo_exception;
+};
+
+/// Exception for invalid values (NaN, infinity, etc.).
+/**
+ * Thrown when encountering invalid numerical values in parameters, bounds, or data.
+ */
+struct PAGMO_DLL_PUBLIC_INLINE_CLASS invalid_value_error final : pagmo_exception {
+    using pagmo_exception::pagmo_exception;
+};
+
+/// Exception for size limit exceeded conditions.
+/**
+ * Thrown when collections exceed their maximum allowed size or overflow conditions occur.
+ */
+struct PAGMO_DLL_PUBLIC_INLINE_CLASS size_limit_error final : pagmo_exception {
+    using pagmo_exception::pagmo_exception;
+};
+
+/// Exception for invalid algorithm parameters.
+/**
+ * Thrown when algorithm parameters are outside their valid ranges or incompatible.
+ */
+struct PAGMO_DLL_PUBLIC_INLINE_CLASS invalid_parameter_error final : pagmo_exception {
+    using pagmo_exception::pagmo_exception;
+};
+
+/// Exception for insufficient population size.
+/**
+ * Thrown when algorithms require minimum population sizes that are not met.
+ */
+struct PAGMO_DLL_PUBLIC_INLINE_CLASS insufficient_population_error final : pagmo_exception {
+    using pagmo_exception::pagmo_exception;
+};
+
+/// Exception for problem type incompatibility.
+/**
+ * Thrown when algorithms are applied to incompatible problem types
+ * (e.g., single-objective algorithm on multi-objective problem).
+ */
+struct PAGMO_DLL_PUBLIC_INLINE_CLASS incompatible_problem_error final : pagmo_exception {
+    using pagmo_exception::pagmo_exception;
+};
+
+/// Exception for bounds and constraint validation errors.
+/**
+ * Thrown when problem bounds or constraints are invalid or inconsistent.
+ */
+struct PAGMO_DLL_PUBLIC_INLINE_CLASS bounds_constraint_error final : pagmo_exception {
+    using pagmo_exception::pagmo_exception;
+};
+
+/// Exception for sparsity pattern validation errors.
+/**
+ * Thrown when gradient or Hessian sparsity patterns are invalid.
+ */
+struct PAGMO_DLL_PUBLIC_INLINE_CLASS sparsity_pattern_error final : pagmo_exception {
+    using pagmo_exception::pagmo_exception;
+};
+
+/// Exception for decomposition method errors.
+/**
+ * Thrown when multi-objective decomposition methods are configured incorrectly.
+ */
+struct PAGMO_DLL_PUBLIC_INLINE_CLASS decomposition_error final : pagmo_exception {
+    using pagmo_exception::pagmo_exception;
+};
+
+/// Exception for problem-specific configuration errors.
+/**
+ * Thrown when test problems (CEC, ZDT, DTLZ, etc.) are configured with invalid parameters.
+ */
+struct PAGMO_DLL_PUBLIC_INLINE_CLASS problem_config_error final : pagmo_exception {
+    using pagmo_exception::pagmo_exception;
+};
+
+/// Exception for system-level errors.
+/**
+ * Thrown when system calls fail (fork, pipe, etc.) or I/O operations fail.
+ */
+struct PAGMO_DLL_PUBLIC_INLINE_CLASS system_error final : pagmo_exception {
+    using pagmo_exception::pagmo_exception;
+};
+
+/// Exception for policy configuration errors.
+/**
+ * Thrown when selection/replacement policies are configured incorrectly.
+ */
+struct PAGMO_DLL_PUBLIC_INLINE_CLASS policy_config_error final : pagmo_exception {
+    using pagmo_exception::pagmo_exception;
+};
+
+/// Exception for multi-objective specific errors.
+/**
+ * Thrown in multi-objective utility functions when requirements are not met.
+ */
+struct PAGMO_DLL_PUBLIC_INLINE_CLASS multi_objective_error final : pagmo_exception {
+    using pagmo_exception::pagmo_exception;
+};
+
+/// Exception for utility function validation errors.
+/**
+ * Thrown when utility functions receive invalid parameters or data.
+ */
+struct PAGMO_DLL_PUBLIC_INLINE_CLASS utility_error final : pagmo_exception {
+    using pagmo_exception::pagmo_exception;
+};
+
+/// Exception for batch evaluation errors.
+/**
+ * Thrown when batch fitness evaluation encounters invalid configurations or data.
+ */
+struct PAGMO_DLL_PUBLIC_INLINE_CLASS batch_eval_error final : pagmo_exception {
+    using pagmo_exception::pagmo_exception;
+};
+
 } // namespace pagmo
 
 #endif

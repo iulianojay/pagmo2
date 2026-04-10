@@ -97,7 +97,7 @@ void reksum(std::vector<std::vector<double>> &retval, const std::vector<pop_size
 bool pareto_dominance(const vector_double &obj1, const vector_double &obj2)
 {
     if (obj1.size() != obj2.size()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(dimension_mismatch_error,
                     "Different number of objectives found in input fitnesses: " + std::to_string(obj1.size()) + " and "
                         + std::to_string(obj2.size()) + ". I cannot define dominance");
     }
@@ -138,12 +138,13 @@ std::vector<pop_size_t> non_dominated_front_2d(const std::vector<vector_double> 
     // We make sure all input_objs contain M objectives
     if (!std::all_of(input_objs.begin(), input_objs.end(),
                      [M](const vector_double &item) { return item.size() == M; })) {
-        pagmo_throw(std::invalid_argument, "Input contains vector of objectives with heterogeneous dimensionalities");
+        pagmo_throw(dimension_mismatch_error,
+                    "Input contains vector of objectives with heterogeneous dimensionalities");
     }
     // We make sure this function is only requested for two objectives.
     if (M != 2u) {
-        pagmo_throw(std::invalid_argument, "The number of objectives detected is " + std::to_string(M)
-                                               + ", while Kung's algorithm only works for two objectives.");
+        pagmo_throw(dimension_mismatch_error, "The number of objectives detected is " + std::to_string(M)
+                                                  + ", while Kung's algorithm only works for two objectives.");
     }
     // Sanity checks are over. We may run Kung's algorithm.
     std::vector<pop_size_t> front;
@@ -202,7 +203,7 @@ fnds_return_type fast_non_dominated_sorting(const std::vector<vector_double> &po
     auto N = points.size();
     // We make sure to have two points at least (one could also be allowed)
     if (N < 2u) {
-        pagmo_throw(std::invalid_argument, "At least two points are needed for fast_non_dominated_sorting: "
+        pagmo_throw(multi_objective_error, "At least two points are needed for fast_non_dominated_sorting: "
                                                + std::to_string(N) + " detected.");
     }
     // Initialize the return values
@@ -282,20 +283,21 @@ vector_double crowding_distance(const std::vector<vector_double> &non_dom_front)
     auto N = non_dom_front.size();
     // We make sure to have two points at least
     if (N < 2u) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(multi_objective_error,
                     "A non dominated front must contain at least two points: " + std::to_string(N) + " detected.");
     }
     auto M = non_dom_front[0].size();
     // We make sure the first point of the input non dominated front contains at least two objectives
     if (M < 2u) {
-        pagmo_throw(std::invalid_argument, "Points in the non dominated front must contain at least two objectives: "
+        pagmo_throw(multi_objective_error, "Points in the non dominated front must contain at least two objectives: "
                                                + std::to_string(M) + " detected.");
     }
     // We make sure all points contain the same number of objectives
     if (!std::all_of(non_dom_front.begin(), non_dom_front.end(),
                      [M](const vector_double &item) { return item.size() == M; })) {
-        pagmo_throw(std::invalid_argument, "A non dominated front must contain points of uniform dimensionality. Some "
-                                           "different sizes were instead detected.");
+        pagmo_throw(dimension_mismatch_error,
+                    "A non dominated front must contain points of uniform dimensionality. Some "
+                    "different sizes were instead detected.");
     }
     std::vector<pop_size_t> indexes(N);
     std::iota(indexes.begin(), indexes.end(), pop_size_t(0u));
@@ -488,7 +490,7 @@ vector_double ideal(const std::vector<vector_double> &points)
     auto M = points[0].size();
     for (const auto &f : points) {
         if (f.size() != M) {
-            pagmo_throw(std::invalid_argument,
+            pagmo_throw(dimension_mismatch_error,
                         "Input vector of objectives must contain fitness vector of equal dimension "
                             + std::to_string(M));
         }
@@ -583,20 +585,20 @@ vector_double decompose_objectives(const vector_double &f, const vector_double &
                                    const std::string &method)
 {
     if (weight.size() != f.size()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(dimension_mismatch_error,
                     "Weight vector size must be equal to the number of objectives. The size of the weight vector is "
                         + std::to_string(weight.size()) + " while " + std::to_string(f.size())
                         + " objectives were detected");
     }
     if (ref_point.size() != f.size()) {
         pagmo_throw(
-            std::invalid_argument,
+            dimension_mismatch_error,
             "Reference point size must be equal to the number of objectives. The size of the reference point is "
                 + std::to_string(ref_point.size()) + " while " + std::to_string(f.size())
                 + " objectives were detected");
     }
     if (f.size() == 0u) {
-        pagmo_throw(std::invalid_argument, "The number of objectives detected is: " + std::to_string(f.size())
+        pagmo_throw(multi_objective_error, "The number of objectives detected is: " + std::to_string(f.size())
                                                + ". Cannot decompose this into anything.");
     }
     double fd = 0.;
@@ -632,8 +634,8 @@ vector_double decompose_objectives(const vector_double &f, const vector_double &
         d2 = std::sqrt(d2);
         fd = d1 + THETA * d2;
     } else {
-        pagmo_throw(std::invalid_argument, "The decomposition method chosen was: " + method
-                                               + R"(, but only "weighted", "tchebycheff" or "bi" are allowed)");
+        pagmo_throw(decomposition_error, "The decomposition method chosen was: " + method
+                                             + R"(, but only "weighted", "tchebycheff" or "bi" are allowed)");
     }
     return {fd};
 }

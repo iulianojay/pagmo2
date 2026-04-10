@@ -29,12 +29,11 @@ see https://www.gnu.org/licenses/. */
 #ifndef PAGMO_ALGORITHMS_MACO_HPP
 #define PAGMO_ALGORITHMS_MACO_HPP
 
+#include <optional>
 #include <random>
 #include <string>
 #include <tuple>
 #include <vector>
-
-#include <boost/optional.hpp>
 
 #include <pagmo/algorithm.hpp>
 #include <pagmo/bfe.hpp>
@@ -109,9 +108,14 @@ public:
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned);
+    void serialize(Archive &ar)
+    {
+
+        detail::archive(ar, m_gen, m_focus, m_ker, m_evalstop, m_e, m_seed, m_verbosity, m_log, m_threshold, m_q,
+                        m_n_gen_mark, m_memory, m_counter, m_sol_archive, m_n_evalstop, m_gen_mark, m_bfe);
+    }
 
     PAGMO_DLL_LOCAL void pheromone_computation(const unsigned gen, vector_double &prob_cumulative,
                                                vector_double &omega_vec, vector_double &sigma_vec,
@@ -137,7 +141,7 @@ private:
     mutable std::vector<vector_double> m_sol_archive;
     mutable unsigned m_n_evalstop;
     mutable unsigned m_gen_mark;
-    boost::optional<bfe> m_bfe;
+    std::optional<bfe> m_bfe;
     mutable population m_pop;
 };
 

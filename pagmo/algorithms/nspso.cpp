@@ -43,10 +43,6 @@ see https://www.gnu.org/licenses/. */
 #include <pagmo/utils/generic.hpp>
 #include <pagmo/utils/multi_objective.hpp>
 
-// NOTE: apparently this must be included *after*
-// the other serialization headers.
-#include <boost/serialization/optional.hpp>
-
 namespace pagmo
 {
 
@@ -57,25 +53,25 @@ nspso::nspso(unsigned gen, double omega, double c1, double c2, double chi, doubl
       m_velocity(), m_e(seed), m_seed(seed), m_verbosity(0u)
 {
     if (omega < 0. || omega > 1.) {
-        pagmo_throw(std::invalid_argument, "The particles' inertia weight must be in the [0,1] range, while a value of "
+        pagmo_throw(invalid_parameter_error, "The particles' inertia weight must be in the [0,1] range, while a value of "
                                                + std::to_string(m_omega) + " was detected");
     }
     if (c1 <= 0 || c2 <= 0 || chi <= 0) {
-        pagmo_throw(std::invalid_argument, "first and second magnitude of the force "
+        pagmo_throw(invalid_parameter_error, "first and second magnitude of the force "
                                            "coefficients and velocity scaling factor should be greater than 0");
     }
     if (v_coeff <= 0 || v_coeff > 1) {
-        pagmo_throw(std::invalid_argument, "velocity scaling factor should be in ]0,1] range, while a value of"
+        pagmo_throw(invalid_parameter_error, "velocity scaling factor should be in ]0,1] range, while a value of"
                                                + std::to_string(v_coeff) + " was detected");
     }
     if (leader_selection_range > 100) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "leader selection range coefficient should be in the ]0,100] range, while a value of"
                         + std::to_string(leader_selection_range) + " was detected");
     }
     if (diversity_mechanism != "crowding distance" && diversity_mechanism != "niche count"
         && diversity_mechanism != "max min") {
-        pagmo_throw(std::invalid_argument, "Non existing diversity mechanism method.");
+        pagmo_throw(invalid_parameter_error, "Non existing diversity mechanism method.");
     }
 }
 
@@ -96,20 +92,20 @@ population nspso::evolve(population pop) const
     // We start by checking that the problem is suitable for this
     // particular algorithm.
     if (prob.is_stochastic()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "The problem appears to be stochastic " + get_name() + " cannot deal with it");
     }
     if (prob.get_nc() != 0u) {
-        pagmo_throw(std::invalid_argument, "Non linear constraints detected in " + prob.get_name() + " instance. "
+        pagmo_throw(incompatible_problem_error, "Non linear constraints detected in " + prob.get_name() + " instance. "
                                                + get_name() + " cannot deal with them.");
     }
     if (prob.get_nf() < 2u) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "This is a multi-objective algorithm, while number of objectives detected in " + prob.get_name()
                         + " is " + std::to_string(prob.get_nf()));
     }
     if (pop.size() <= 1u) {
-        pagmo_throw(std::invalid_argument, get_name() + " can only work with population sizes >=2, whereas "
+        pagmo_throw(insufficient_population_error, get_name() + " can only work with population sizes >=2, whereas "
                                                + std::to_string(pop.size()) + " were detected.");
     }
     // Get out if there is nothing to do.
@@ -168,24 +164,24 @@ population nspso::evolve(population pop) const
                 auto ideal_point_verb = ideal(m_best_fit);
                 // Every 50 lines print the column names
                 if (count_verb % 50u == 1u) {
-                    print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:");
+                    pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:");
                     for (decltype(ideal_point_verb.size()) i = 0u; i < ideal_point_verb.size(); ++i) {
                         if (i >= 5u) {
-                            print(std::setw(15), "... :");
+                            pagmo::print(std::setw(15), "... :");
                             break;
                         }
-                        print(std::setw(15), "ideal" + std::to_string(i + 1u) + ":");
+                        pagmo::print(std::setw(15), "ideal" + std::to_string(i + 1u) + ":");
                     }
-                    print('\n');
+                    pagmo::print('\n');
                 }
-                print(std::setw(7), gen, std::setw(15), prob.get_fevals());
+                pagmo::print(std::setw(7), gen, std::setw(15), prob.get_fevals());
                 for (decltype(ideal_point_verb.size()) i = 0u; i < ideal_point_verb.size(); ++i) {
                     if (i >= 5u) {
                         break;
                     }
-                    print(std::setw(15), ideal_point_verb[i]);
+                    pagmo::print(std::setw(15), ideal_point_verb[i]);
                 }
-                print('\n');
+                pagmo::print('\n');
                 ++count_verb;
                 // Logs
                 m_log.emplace_back(gen, prob.get_fevals(), ideal_point_verb);
@@ -435,14 +431,6 @@ std::string nspso::get_extra_info() const
     stream(ss, "\n\tSeed: ", m_seed);
     stream(ss, "\n\tVerbosity: ", m_verbosity);
     return ss.str();
-}
-
-// Object serialization
-template <typename Archive>
-void nspso::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, m_gen, m_omega, m_c1, m_c2, m_chi, m_v_coeff, m_leader_selection_range, m_diversity_mechanism,
-                    m_e, m_seed, m_verbosity, m_log, m_bfe);
 }
 
 double nspso::minfit(vector_double::size_type(i), vector_double::size_type(j),

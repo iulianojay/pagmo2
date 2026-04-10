@@ -56,7 +56,7 @@ public:
     void push_back();
     std::pair<std::vector<std::size_t>, vector_double> get_connections(std::size_t) const;
 
-    bgl_graph_t to_bgl() const;
+    graph_t to_graph() const;
 
     std::string get_name() const;
     std::string get_extra_info() const;
@@ -65,12 +65,24 @@ public:
     std::size_t num_vertices() const;
 
 private:
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void save(Archive &, unsigned) const;
+    void save(Archive &ar) const
+    {
+
+        detail::archive(ar, m_weight, m_num_vertices.load(std::memory_order_relaxed));
+    }
     template <typename Archive>
-    void load(Archive &, unsigned);
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
+    void load(Archive &ar)
+    {
+
+        std::size_t num_vertices;
+
+        ar(m_weight);
+        ar(num_vertices);
+
+        m_num_vertices.store(num_vertices, std::memory_order_relaxed);
+    }
 
     double m_weight;
     std::atomic<std::size_t> m_num_vertices;

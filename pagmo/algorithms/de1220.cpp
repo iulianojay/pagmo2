@@ -56,13 +56,13 @@ de1220::de1220(unsigned gen, std::vector<unsigned> allowed_variants, unsigned va
 {
     for (auto variant : allowed_variants) {
         if (variant < 1u || variant > 18u) {
-            pagmo_throw(std::invalid_argument,
+            pagmo_throw(invalid_parameter_error,
                         "All mutation variants considered must be in [1, .., 18], while a value of "
                             + std::to_string(variant) + " was detected.");
         }
     }
     if (variant_adptv < 1u || variant_adptv > 2u) {
-        pagmo_throw(std::invalid_argument, "The variant for self-adaptation must be in [1,2], while a value of "
+        pagmo_throw(invalid_parameter_error, "The variant for self-adaptation must be in [1,2], while a value of "
                                                + std::to_string(variant_adptv) + " was detected.");
     }
 }
@@ -95,15 +95,15 @@ population de1220::evolve(population pop) const
     // We start by checking that the problem is suitable for this
     // particular algorithm.
     if (prob.get_nc() != 0u) {
-        pagmo_throw(std::invalid_argument, "Non linear constraints detected in " + prob.get_name() + " instance. "
+        pagmo_throw(incompatible_problem_error, "Non linear constraints detected in " + prob.get_name() + " instance. "
                                                + get_name() + " cannot deal with them");
     }
     if (prob_f_dimension != 1u) {
-        pagmo_throw(std::invalid_argument, "Multiple objectives detected in " + prob.get_name() + " instance. "
+        pagmo_throw(incompatible_problem_error, "Multiple objectives detected in " + prob.get_name() + " instance. "
                                                + get_name() + " cannot deal with them");
     }
     if (prob.is_stochastic()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(incompatible_problem_error,
                     "The problem appears to be stochastic " + get_name() + " cannot deal with it");
     }
     // Get out if there is nothing to do.
@@ -111,7 +111,7 @@ population de1220::evolve(population pop) const
         return pop;
     }
     if (pop.size() < 7u) {
-        pagmo_throw(std::invalid_argument, get_name() + " needs at least 7 individuals in the population, "
+        pagmo_throw(insufficient_population_error, get_name() + " needs at least 7 individuals in the population, "
                                                + std::to_string(pop.size()) + " detected");
     }
     // ---------------------------------------------------------------------------------------------------------
@@ -581,11 +581,11 @@ population de1220::evolve(population pop) const
                 df = std::abs(pop.get_f()[worst_idx][0] - pop.get_f()[best_idx][0]);
                 // Every 50 lines print the column names
                 if (count % 50u == 1u) {
-                    print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
+                    pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
                           "F:", std::setw(15), "CR:", std::setw(15), "Variant:", std::setw(15), "dx:", std::setw(15),
                           std::setw(15), "df:", '\n');
                 }
-                print(std::setw(7), gen, std::setw(15), prob.get_fevals() - fevals0, std::setw(15),
+                pagmo::print(std::setw(7), gen, std::setw(15), prob.get_fevals() - fevals0, std::setw(15),
                       pop.get_f()[best_idx][0], std::setw(15), gbIterF, std::setw(15), gbIterCR, std::setw(15),
                       gbIterVariant, std::setw(15), dx, std::setw(15), df, '\n');
                 ++count;
@@ -629,14 +629,6 @@ std::string de1220::get_extra_info() const
     stream(ss, "\n\tVerbosity: ", m_verbosity);
     stream(ss, "\n\tSeed: ", m_seed);
     return ss.str();
-}
-
-// Object serialization
-template <typename Archive>
-void de1220::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, m_gen, m_F, m_CR, m_allowed_variants, m_variant_adptv, m_ftol, m_xtol, m_memory, m_e, m_seed,
-                    m_verbosity, m_log);
 }
 
 } // namespace pagmo

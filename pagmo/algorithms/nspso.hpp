@@ -21,11 +21,10 @@ see https://www.gnu.org/licenses/. */
 #ifndef PAGMO_ALGORITHMS_NSPSO_HPP
 #define PAGMO_ALGORITHMS_NSPSO_HPP
 
+#include <optional>
 #include <string>
 #include <tuple>
 #include <vector>
-
-#include <boost/optional.hpp>
 
 #include <pagmo/algorithm.hpp>
 #include <pagmo/detail/visibility.hpp>
@@ -111,9 +110,14 @@ public:
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned);
+    void serialize(Archive &ar)
+    {
+
+        detail::archive(ar, m_gen, m_omega, m_c1, m_c2, m_chi, m_v_coeff, m_leader_selection_range, m_diversity_mechanism,
+                        m_e, m_seed, m_verbosity, m_log, m_bfe);
+    }
 
     PAGMO_DLL_LOCAL double minfit(vector_double::size_type, vector_double::size_type,
                                   const std::vector<vector_double> &) const;
@@ -139,7 +143,7 @@ private:
     unsigned m_seed;
     unsigned m_verbosity;
     mutable log_type m_log;
-    boost::optional<bfe> m_bfe;
+    std::optional<bfe> m_bfe;
 };
 
 } // namespace pagmo

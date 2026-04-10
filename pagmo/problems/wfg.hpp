@@ -75,9 +75,13 @@ public:
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned);
+    void serialize(Archive &ar)
+    {
+
+        detail::archive(ar, m_prob_id, m_dim_dvs, m_dim_obj, m_dim_k);
+    }
 
     PAGMO_DLL_LOCAL double linear(const vector_double &, const vector_double::size_type) const;
     PAGMO_DLL_LOCAL double convex(const vector_double &, const vector_double::size_type) const;

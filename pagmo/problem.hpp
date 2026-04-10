@@ -42,8 +42,6 @@ see https://www.gnu.org/licenses/. */
 #include <utility>
 #include <vector>
 
-#include <boost/type_traits/integral_constant.hpp>
-
 #include <pagmo/concepts.hpp>
 #include <pagmo/config.hpp>
 #include <pagmo/detail/pagmo.fwd.hpp>
@@ -67,11 +65,29 @@ see https://www.gnu.org/licenses/. */
 // See also:
 // https://www.boost.org/doc/libs/1_70_0/libs/serialization/doc/special.html#objecttracking
 // https://www.boost.org/doc/libs/1_70_0/libs/serialization/doc/traits.html#level
-#define PAGMO_S11N_PROBLEM_EXPORT_KEY(prob)                                                                            \
-    BOOST_CLASS_EXPORT_KEY2(pagmo::detail::prob_inner<prob>, "udp " #prob)                                             \
-    BOOST_CLASS_TRACKING(pagmo::detail::prob_inner<prob>, boost::serialization::track_never)
 
-#define PAGMO_S11N_PROBLEM_IMPLEMENT(prob) BOOST_CLASS_EXPORT_IMPLEMENT(pagmo::detail::prob_inner<prob>)
+// Declares the compile-time cereal name binding, polymorphic caster relation, and
+// archive binding. CEREAL_BIND_TO_ARCHIVES is included here so every DSO that
+// includes this header self-registers the type — required for macOS two-level namespace.
+#define PAGMO_S11N_PROBLEM_EXPORT_KEY(prob)                                                                            \
+    namespace cereal                                                                                                   \
+    {                                                                                                                  \
+    namespace detail                                                                                                   \
+    {                                                                                                                  \
+    template <>                                                                                                        \
+    struct binding_name<pagmo::detail::prob_inner<prob>> {                                                             \
+        static constexpr char const *name()                                                                            \
+        {                                                                                                              \
+            return "pagmo::detail::prob_inner<" #prob ">";                                                             \
+        }                                                                                                              \
+    };                                                                                                                 \
+    }                                                                                                                  \
+    } /* end namespaces */                                                                                             \
+    CEREAL_REGISTER_POLYMORPHIC_RELATION(pagmo::detail::prob_inner_base, pagmo::detail::prob_inner<prob>)              \
+    CEREAL_BIND_TO_ARCHIVES(pagmo::detail::prob_inner<prob>)
+
+// Also called from pagmo/s11n_registrations.cpp (idempotent — safe to call multiple times).
+#define PAGMO_S11N_PROBLEM_IMPLEMENT(prob)
 
 #define PAGMO_S11N_PROBLEM_EXPORT(prob)                                                                                \
     PAGMO_S11N_PROBLEM_EXPORT_KEY(prob)                                                                                \
@@ -383,9 +399,9 @@ struct PAGMO_DLL_PUBLIC_INLINE_CLASS prob_inner_base {
     virtual void *get_ptr() = 0;
 
 private:
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned)
+    void serialize(Archive &)
     {
     }
 };
@@ -770,11 +786,11 @@ struct PAGMO_DLL_PUBLIC_INLINE_CLASS prob_inner final : prob_inner_base {
 
 private:
     // Serialization.
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &ar, unsigned)
+    void serialize(Archive &ar)
     {
-        detail::archive(ar, boost::serialization::base_object<prob_inner_base>(*this), m_value);
+        detail::archive(ar, cereal::base_class<prob_inner_base>(this), m_value);
     }
 
 public:
@@ -787,7 +803,6 @@ public:
 
 // Disable Boost.Serialization tracking for the implementation
 // details of problem.
-BOOST_CLASS_TRACKING(pagmo::detail::prob_inner_base, boost::serialization::track_never)
 
 namespace pagmo
 {
@@ -1503,9 +1518,9 @@ public:
     void *get_ptr();
 
 private:
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void save(Archive &ar, unsigned) const
+    void save(Archive &ar) const
     {
         detail::to_archive(ar, m_ptr, m_fevals.load(std::memory_order_relaxed),
                            m_gevals.load(std::memory_order_relaxed), m_hevals.load(std::memory_order_relaxed), m_lb,
@@ -1515,7 +1530,7 @@ private:
     }
 
     template <typename Archive>
-    void load(Archive &ar, unsigned)
+    void load(Archive &ar)
     {
         try {
             unsigned long long fevals, gevals, hevals;
@@ -1530,7 +1545,6 @@ private:
             throw;
         }
     }
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
 
     // Just two small helpers to make sure that whenever we require
     // access to the pointer it actually points to something.

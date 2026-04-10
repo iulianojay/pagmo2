@@ -39,8 +39,6 @@ see https://www.gnu.org/licenses/. */
 #include <typeinfo>
 #include <utility>
 
-#include <boost/type_traits/integral_constant.hpp>
-
 #include <pagmo/concepts.hpp>
 #include <pagmo/config.hpp>
 #include <pagmo/detail/pagmo.fwd.hpp>
@@ -52,11 +50,28 @@ see https://www.gnu.org/licenses/. */
 #include <pagmo/type_traits.hpp>
 #include <pagmo/types.hpp>
 
+// Declares the compile-time cereal name binding, polymorphic caster relation, and
+// archive binding. CEREAL_BIND_TO_ARCHIVES is included here so every DSO that
+// includes this header self-registers the type — required for macOS two-level namespace.
 #define PAGMO_S11N_S_POLICY_EXPORT_KEY(s)                                                                              \
-    BOOST_CLASS_EXPORT_KEY2(pagmo::detail::s_pol_inner<s>, "udsp " #s)                                                 \
-    BOOST_CLASS_TRACKING(pagmo::detail::s_pol_inner<s>, boost::serialization::track_never)
+    namespace cereal                                                                                                   \
+    {                                                                                                                  \
+    namespace detail                                                                                                   \
+    {                                                                                                                  \
+    template <>                                                                                                        \
+    struct binding_name<pagmo::detail::s_pol_inner<s>> {                                                               \
+        static constexpr char const *name()                                                                            \
+        {                                                                                                              \
+            return "pagmo::detail::s_pol_inner<" #s ">";                                                               \
+        }                                                                                                              \
+    };                                                                                                                 \
+    }                                                                                                                  \
+    } /* end namespaces */                                                                                             \
+    CEREAL_REGISTER_POLYMORPHIC_RELATION(pagmo::detail::s_pol_inner_base, pagmo::detail::s_pol_inner<s>)               \
+    CEREAL_BIND_TO_ARCHIVES(pagmo::detail::s_pol_inner<s>)
 
-#define PAGMO_S11N_S_POLICY_IMPLEMENT(s) BOOST_CLASS_EXPORT_IMPLEMENT(pagmo::detail::s_pol_inner<s>)
+// Also called from pagmo/s11n_registrations.cpp (idempotent — safe to call multiple times).
+#define PAGMO_S11N_S_POLICY_IMPLEMENT(s)
 
 #define PAGMO_S11N_S_POLICY_EXPORT(s)                                                                                  \
     PAGMO_S11N_S_POLICY_EXPORT_KEY(s)                                                                                  \
@@ -117,9 +132,9 @@ struct PAGMO_DLL_PUBLIC_INLINE_CLASS s_pol_inner_base {
     virtual void *get_ptr() = 0;
 
 private:
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned)
+    void serialize(Archive &)
     {
     }
 };
@@ -197,12 +212,12 @@ struct PAGMO_DLL_PUBLIC_INLINE_CLASS s_pol_inner final : s_pol_inner_base {
     }
 
 private:
-    friend class boost::serialization::access;
+    friend class cereal::access;
     // Serialization
     template <typename Archive>
-    void serialize(Archive &ar, unsigned)
+    void serialize(Archive &ar)
     {
-        detail::archive(ar, boost::serialization::base_object<s_pol_inner_base>(*this), m_value);
+        detail::archive(ar, cereal::base_class<s_pol_inner_base>(this), m_value);
     }
 
 public:
@@ -215,7 +230,6 @@ public:
 
 // Disable Boost.Serialization tracking for the implementation
 // details of s_policy.
-BOOST_CLASS_TRACKING(pagmo::detail::s_pol_inner_base, boost::serialization::track_never)
 
 namespace pagmo
 {
@@ -311,15 +325,15 @@ public:
     void *get_ptr();
 
 private:
-    friend class boost::serialization::access;
+    friend class cereal::access;
     // Serialisation support.
     template <typename Archive>
-    void save(Archive &ar, unsigned) const
+    void save(Archive &ar) const
     {
         detail::to_archive(ar, m_ptr, m_name);
     }
     template <typename Archive>
-    void load(Archive &ar, unsigned)
+    void load(Archive &ar)
     {
         try {
             detail::from_archive(ar, m_ptr, m_name);
@@ -328,7 +342,6 @@ private:
             throw;
         }
     }
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
 
     // Just two small helpers to make sure that whenever we require
     // access to the pointer it actually points to something.

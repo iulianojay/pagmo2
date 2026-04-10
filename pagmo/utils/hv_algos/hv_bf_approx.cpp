@@ -58,10 +58,10 @@ bf_approx::bf_approx(bool use_exact, unsigned trivial_subcase_size, double eps, 
       m_e(seed)
 {
     if (eps < 0 || eps > 1) {
-        pagmo_throw(std::invalid_argument, "Epsilon needs to be a probability.");
+        pagmo_throw(invalid_parameter_error, "Epsilon needs to be a probability.");
     }
     if (delta < 0 || delta > 1) {
-        pagmo_throw(std::invalid_argument, "Delta needs to be a probability.");
+        pagmo_throw(invalid_parameter_error, "Delta needs to be a probability.");
     }
 }
 
@@ -74,7 +74,7 @@ bf_approx::bf_approx(bool use_exact, unsigned trivial_subcase_size, double eps, 
  */
 double bf_approx::compute(std::vector<vector_double> &, const vector_double &) const
 {
-    pagmo_throw(std::invalid_argument,
+    pagmo_throw(invalid_parameter_error,
                 "This algorithm can just approximate extreme contributions but not the hypervolume itself.");
 }
 

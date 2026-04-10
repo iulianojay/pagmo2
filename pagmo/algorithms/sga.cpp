@@ -26,13 +26,6 @@ You should have received copies of the GNU General Public License and the
 GNU Lesser General Public License along with the PaGMO library.  If not,
 see https://www.gnu.org/licenses/. */
 
-#if defined(_MSC_VER)
-
-// Boost's bimap results in some C++17 deprecation warnings in C++17 mode.
-#define _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
-
-#endif
-
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -46,7 +39,7 @@ see https://www.gnu.org/licenses/. */
 #include <utility>
 #include <vector>
 
-#include <boost/bimap.hpp>
+#include <map>
 
 #include <pagmo/algorithm.hpp>
 #include <pagmo/algorithms/sga.hpp>
@@ -70,38 +63,83 @@ namespace
 
 // All this scaffolding is to establish a one to one correspondence between enums and genetic operator types
 // represented as strings.
-using sga_selection_map_t = boost::bimap<std::string, sga_selection>;
-using sga_crossover_map_t = boost::bimap<std::string, sga_crossover>;
-using sga_mutation_map_t = boost::bimap<std::string, sga_mutation>;
+struct sga_selection_map_t {
+    std::map<std::string, sga_selection> fwd;
+    std::map<sga_selection, std::string> rev;
+    void insert(const std::string &k, sga_selection v)
+    {
+        fwd[k] = v;
+        rev[v] = k;
+    }
+    sga_selection get_value(const std::string &k) const
+    {
+        return fwd.at(k);
+    }
+    const std::string &get_key(sga_selection v) const
+    {
+        return rev.at(v);
+    }
+};
+struct sga_crossover_map_t {
+    std::map<std::string, sga_crossover> fwd;
+    std::map<sga_crossover, std::string> rev;
+    void insert(const std::string &k, sga_crossover v)
+    {
+        fwd[k] = v;
+        rev[v] = k;
+    }
+    sga_crossover get_value(const std::string &k) const
+    {
+        return fwd.at(k);
+    }
+    const std::string &get_key(sga_crossover v) const
+    {
+        return rev.at(v);
+    }
+};
+struct sga_mutation_map_t {
+    std::map<std::string, sga_mutation> fwd;
+    std::map<sga_mutation, std::string> rev;
+    void insert(const std::string &k, sga_mutation v)
+    {
+        fwd[k] = v;
+        rev[v] = k;
+    }
+    sga_mutation get_value(const std::string &k) const
+    {
+        return fwd.at(k);
+    }
+    const std::string &get_key(sga_mutation v) const
+    {
+        return rev.at(v);
+    }
+};
 
 // Helper init functions
 sga_selection_map_t sga_init_selection_map()
 {
     sga_selection_map_t retval;
-    using value_type = sga_selection_map_t::value_type;
-    retval.insert(value_type("tournament", sga_selection::TOURNAMENT));
-    retval.insert(value_type("truncated", sga_selection::TRUNCATED));
+    retval.insert("tournament", sga_selection::TOURNAMENT);
+    retval.insert("truncated", sga_selection::TRUNCATED);
     return retval;
 }
 
 sga_crossover_map_t sga_init_crossover_map()
 {
     sga_crossover_map_t retval;
-    using value_type = sga_crossover_map_t::value_type;
-    retval.insert(value_type("exponential", sga_crossover::EXPONENTIAL));
-    retval.insert(value_type("binomial", sga_crossover::BINOMIAL));
-    retval.insert(value_type("sbx", sga_crossover::SBX));
-    retval.insert(value_type("single", sga_crossover::SINGLE));
+    retval.insert("exponential", sga_crossover::EXPONENTIAL);
+    retval.insert("binomial", sga_crossover::BINOMIAL);
+    retval.insert("sbx", sga_crossover::SBX);
+    retval.insert("single", sga_crossover::SINGLE);
     return retval;
 }
 
 sga_mutation_map_t sga_init_mutation_map()
 {
     sga_mutation_map_t retval;
-    using value_type = sga_mutation_map_t::value_type;
-    retval.insert(value_type("gaussian", sga_mutation::GAUSSIAN));
-    retval.insert(value_type("uniform", sga_mutation::UNIFORM));
-    retval.insert(value_type("polynomial", sga_mutation::POLYNOMIAL));
+    retval.insert("gaussian", sga_mutation::GAUSSIAN);
+    retval.insert("uniform", sga_mutation::UNIFORM);
+    retval.insert("polynomial", sga_mutation::POLYNOMIAL);
     return retval;
 }
 
@@ -119,21 +157,21 @@ sga::sga(unsigned gen, double cr, double eta_c, double m, double param_m, unsign
       m_verbosity(0u), m_log()
 {
     if (cr > 1. || cr < 0.) {
-        pagmo_throw(std::invalid_argument, "The crossover probability must be in the [0,1] range, while a value of "
-                                               + std::to_string(cr) + " was detected");
+        pagmo_throw(invalid_parameter_error, "The crossover probability must be in the [0,1] range, while a value of "
+                                                 + std::to_string(cr) + " was detected");
     }
     if (eta_c < 1. || eta_c > 100.) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "The distribution index for SBX crossover must be in [1, 100], while a value of "
                         + std::to_string(eta_c) + " was detected");
     }
     if (m < 0. || m > 1.) {
-        pagmo_throw(std::invalid_argument, "The mutation probability must be in the [0,1] range, while a value of "
-                                               + std::to_string(cr) + " was detected");
+        pagmo_throw(invalid_parameter_error, "The mutation probability must be in the [0,1] range, while a value of "
+                                                 + std::to_string(cr) + " was detected");
     }
     if (param_s == 0u) {
-        pagmo_throw(std::invalid_argument, "The selection parameter must be at least 1, while a value of "
-                                               + std::to_string(param_s) + " was detected");
+        pagmo_throw(invalid_parameter_error, "The selection parameter must be at least 1, while a value of "
+                                                 + std::to_string(param_s) + " was detected");
     }
     if (mutation != "gaussian" && mutation != "uniform" && mutation != "polynomial") {
         pagmo_throw(
@@ -155,20 +193,20 @@ sga::sga(unsigned gen, double cr, double eta_c, double m, double param_m, unsign
     }
     // param_m represents the distribution index if polynomial mutation is selected
     if (mutation == "polynomial" && (param_m < 1. || param_m > 100.)) {
-        pagmo_throw(std::invalid_argument, "Polynomial mutation was selected, the mutation parameter (distribution "
-                                           "index) must be in [1, 100], while a value of "
-                                               + std::to_string(param_m) + " was detected");
+        pagmo_throw(invalid_parameter_error, "Polynomial mutation was selected, the mutation parameter (distribution "
+                                             "index) must be in [1, 100], while a value of "
+                                                 + std::to_string(param_m) + " was detected");
     }
 
     // otherwise param_m represents the width of the mutation relative to the box bounds
     if (mutation != "polynomial" && (param_m < 0 || param_m > 1.)) {
-        pagmo_throw(std::invalid_argument, "The mutation parameter must be in [0,1], while a value of "
-                                               + std::to_string(param_m) + " was detected");
+        pagmo_throw(invalid_parameter_error, "The mutation parameter must be in [0,1], while a value of "
+                                                 + std::to_string(param_m) + " was detected");
     }
     // We can now init the data members representing the various choices made using std::string
-    m_crossover = detail::sga_crossover_map.left.at(crossover);
-    m_mutation = detail::sga_mutation_map.left.at(mutation);
-    m_selection = detail::sga_selection_map.left.at(selection);
+    m_crossover = detail::sga_crossover_map.get_value(crossover);
+    m_mutation = detail::sga_mutation_map.get_value(mutation);
+    m_selection = detail::sga_selection_map.get_value(selection);
 }
 
 /// Algorithm evolve method
@@ -192,25 +230,25 @@ population sga::evolve(population pop) const
     // PREAMBLE-------------------------------------------------------------------------------------------------
     // Check whether the problem/population are suitable for bee_colony
     if (prob.get_nc() != 0u) {
-        pagmo_throw(std::invalid_argument, "Constraints detected in " + prob.get_name() + " instance. " + get_name()
-                                               + " cannot deal with them");
+        pagmo_throw(incompatible_problem_error, "Constraints detected in " + prob.get_name() + " instance. "
+                                                    + get_name() + " cannot deal with them");
     }
     if (prob.get_nf() != 1u) {
-        pagmo_throw(std::invalid_argument, "Multiple objectives detected in " + prob.get_name() + " instance. "
-                                               + get_name() + " cannot deal with them");
+        pagmo_throw(incompatible_problem_error, "Multiple objectives detected in " + prob.get_name() + " instance. "
+                                                    + get_name() + " cannot deal with them");
     }
     if (NP < 2u) {
-        pagmo_throw(std::invalid_argument, prob.get_name() + " needs at least 2 individuals in the population, "
-                                               + std::to_string(NP) + " detected");
+        pagmo_throw(insufficient_population_error, prob.get_name() + " needs at least 2 individuals in the population, "
+                                                       + std::to_string(NP) + " detected");
     }
     if (m_param_s > pop.size()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(insufficient_population_error,
                     "The parameter for selection must be smaller than the population size, while a value of: "
                         + std::to_string(m_param_s)
                         + " was detected in a population of size: " + std::to_string(pop.size()));
     }
     if (m_crossover == detail::sga_crossover::SBX && (pop.size() % 2 != 0u)) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "Population size must be even if sbx crossover is selected. Detected pop size is: "
                         + std::to_string(pop.size()));
     }
@@ -262,10 +300,10 @@ population sga::evolve(population pop) const
 
                 // Every 50 lines print the column names
                 if (count % 50u == 1u) {
-                    print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
+                    pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
                           "Improvement:", '\n');
                 }
-                print(std::setw(7), i, std::setw(15), prob.get_fevals() - fevals0, std::setw(15),
+                pagmo::print(std::setw(7), i, std::setw(15), prob.get_fevals() - fevals0, std::setw(15),
                       pop.get_f()[pop.best_idx()][0], std::setw(15), improvement, '\n');
                 ++count;
                 // Logs
@@ -310,11 +348,11 @@ std::string sga::get_extra_info() const
     std::ostringstream ss;
     stream(ss, "\tNumber of generations: ", m_gen);
     stream(ss, "\n\tCrossover:");
-    stream(ss, "\n\t\tType: " + detail::sga_crossover_map.right.at(m_crossover));
+    stream(ss, "\n\t\tType: " + detail::sga_crossover_map.get_key(m_crossover));
     stream(ss, "\n\t\tProbability: ", m_cr);
     if (m_crossover == detail::sga_crossover::SBX) stream(ss, "\n\t\tDistribution index: ", m_eta_c);
     stream(ss, "\n\tMutation:");
-    stream(ss, "\n\t\tType: ", detail::sga_mutation_map.right.at(m_mutation));
+    stream(ss, "\n\t\tType: ", detail::sga_mutation_map.get_key(m_mutation));
     stream(ss, "\n\t\tProbability: ", m_m);
     if (m_mutation != detail::sga_mutation::POLYNOMIAL) {
         stream(ss, "\n\t\tWidth: ", m_param_m);
@@ -322,20 +360,12 @@ std::string sga::get_extra_info() const
         stream(ss, "\n\t\tDistribution index: ", m_param_m);
     }
     stream(ss, "\n\tSelection:");
-    stream(ss, "\n\t\tType: ", detail::sga_selection_map.right.at(m_selection));
+    stream(ss, "\n\t\tType: ", detail::sga_selection_map.get_key(m_selection));
     if (m_selection == detail::sga_selection::TRUNCATED) stream(ss, "\n\t\tTruncation size: ", m_param_s);
     if (m_selection == detail::sga_selection::TOURNAMENT) stream(ss, "\n\t\tTournament size: ", m_param_s);
     stream(ss, "\n\tSeed: ", m_seed);
     stream(ss, "\n\tVerbosity: ", m_verbosity);
     return ss.str();
-}
-
-// Object serialization
-template <typename Archive>
-void sga::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, m_gen, m_cr, m_eta_c, m_m, m_param_m, m_param_s, m_mutation, m_selection, m_crossover, m_e,
-                    m_seed, m_verbosity, m_log);
 }
 
 std::vector<vector_double::size_type> sga::perform_selection(const std::vector<vector_double> &F) const

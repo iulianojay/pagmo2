@@ -184,7 +184,7 @@ struct PAGMO_DLL_PUBLIC table {
     void add_row(const Args &...args)
     {
         if (sizeof...(args) != m_headers.size()) {
-            pagmo_throw(std::invalid_argument, "the table was constructed with " + to_string(m_headers.size())
+            pagmo_throw(dimension_mismatch_error, "the table was constructed with " + to_string(m_headers.size())
                                                    + " columns, but a row with " + to_string(sizeof...(args))
                                                    + " columns is being added: the two values must be equal");
         }

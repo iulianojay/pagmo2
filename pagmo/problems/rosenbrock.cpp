@@ -43,7 +43,7 @@ namespace pagmo
 rosenbrock::rosenbrock(vector_double::size_type dim) : m_dim(dim)
 {
     if (dim < 2u) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(problem_config_error,
                     "Rosenbrock Function must have minimum 2 dimensions, " + std::to_string(dim) + " requested");
     }
 }
@@ -98,13 +98,6 @@ vector_double rosenbrock::gradient(const vector_double &x) const
 vector_double rosenbrock::best_known() const
 {
     return vector_double(m_dim, 1.);
-}
-
-// Object serialization
-template <typename Archive>
-void rosenbrock::serialize(Archive &ar, unsigned)
-{
-    ar & m_dim;
 }
 
 } // namespace pagmo

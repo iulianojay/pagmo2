@@ -32,10 +32,8 @@ see https://www.gnu.org/licenses/. */
 #include <stdexcept>
 #include <string>
 #include <tuple>
+#include <variant>
 #include <vector>
-
-#include <boost/numeric/conversion/cast.hpp>
-#include <boost/variant/get.hpp>
 
 #include <pagmo/detail/base_sr_policy.hpp>
 #include <pagmo/detail/custom_comparisons.hpp>
@@ -44,6 +42,7 @@ see https://www.gnu.org/licenses/. */
 #include <pagmo/r_policy.hpp>
 #include <pagmo/s11n.hpp>
 #include <pagmo/types.hpp>
+#include <pagmo/utils/cast.hpp>
 #include <pagmo/utils/constrained.hpp>
 #include <pagmo/utils/multi_objective.hpp>
 
@@ -66,7 +65,7 @@ individuals_group_t fair_replace::replace(const individuals_group_t &inds, const
                                           const vector_double &tol, const individuals_group_t &mig) const
 {
     if (nobj > 1u && (nic || nec)) {
-        pagmo_throw(std::invalid_argument, "The 'fair_replace' replacement policy is unable to deal with "
+        pagmo_throw(policy_config_error, "The 'fair_replace' replacement policy is unable to deal with "
                                            "multiobjective constrained optimisation problems");
     }
 
@@ -79,17 +78,16 @@ individuals_group_t fair_replace::replace(const individuals_group_t &inds, const
     const auto n_migr = [this, inds_size, mig_size]() -> pop_size_t {
         pop_size_t candidate;
 
-        if (this->m_migr_rate.which()) {
+        if (std::holds_alternative<double>(m_migr_rate)) {
             // Fractional migration rate: scale it by the number
             // of input individuals.
             // NOTE: use std::min() to make absolutely sure we don't exceed inds_size
             // due to FP shenanigans.
             candidate = std::min(
-                boost::numeric_cast<pop_size_t>(boost::get<double>(m_migr_rate) * static_cast<double>(inds_size)),
-                inds_size);
+                numeric_cast<pop_size_t>(std::get<double>(m_migr_rate) * static_cast<double>(inds_size)), inds_size);
         } else {
             // Absolute migration rate: check that it's not higher than the input population size.
-            candidate = boost::get<pop_size_t>(m_migr_rate);
+            candidate = std::get<pop_size_t>(m_migr_rate);
             if (candidate > inds_size) {
                 pagmo_throw(
                     std::invalid_argument,
@@ -118,7 +116,7 @@ individuals_group_t fair_replace::replace(const individuals_group_t &inds, const
 
         // Sort (indirectly) the migrants according to their fitness.
         std::vector<pop_size_t> mig_ind_sort;
-        mig_ind_sort.resize(boost::numeric_cast<decltype(mig_ind_sort.size())>(mig_size));
+        mig_ind_sort.resize(numeric_cast<decltype(mig_ind_sort.size())>(mig_size));
         std::iota(mig_ind_sort.begin(), mig_ind_sort.end(), pop_size_t(0));
         std::sort(mig_ind_sort.begin(), mig_ind_sort.end(), [&mig](pop_size_t idx1, pop_size_t idx2) {
             return detail::less_than_f(std::get<2>(mig)[idx1][0], std::get<2>(mig)[idx2][0]);
@@ -135,8 +133,7 @@ individuals_group_t fair_replace::replace(const individuals_group_t &inds, const
 
         // Sort (indirectly) the merged population.
         std::vector<pop_size_t> merged_pop_ind_sort;
-        merged_pop_ind_sort.resize(
-            boost::numeric_cast<decltype(merged_pop_ind_sort.size())>(std::get<0>(merged_pop).size()));
+        merged_pop_ind_sort.resize(numeric_cast<decltype(merged_pop_ind_sort.size())>(std::get<0>(merged_pop).size()));
         std::iota(merged_pop_ind_sort.begin(), merged_pop_ind_sort.end(), pop_size_t(0));
         std::sort(merged_pop_ind_sort.begin(), merged_pop_ind_sort.end(),
                   [&merged_pop](pop_size_t idx1, pop_size_t idx2) {
@@ -223,20 +220,13 @@ individuals_group_t fair_replace::replace(const individuals_group_t &inds, const
 // Extra info.
 std::string fair_replace::get_extra_info() const
 {
-    if (m_migr_rate.which()) {
-        const auto rate = boost::get<double>(m_migr_rate);
+    if (std::holds_alternative<double>(m_migr_rate)) {
+        const auto rate = std::get<double>(m_migr_rate);
         return "\tFractional migration rate: " + std::to_string(rate);
     } else {
-        const auto rate = boost::get<pop_size_t>(m_migr_rate);
+        const auto rate = std::get<pop_size_t>(m_migr_rate);
         return "\tAbsolute migration rate: " + std::to_string(rate);
     }
-}
-
-// Serialization support.
-template <typename Archive>
-void fair_replace::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, boost::serialization::base_object<detail::base_sr_policy>(*this));
 }
 
 } // namespace pagmo

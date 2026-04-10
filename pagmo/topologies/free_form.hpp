@@ -52,7 +52,7 @@ public:
     free_form(const free_form &);
     free_form(free_form &&) noexcept;
 
-    explicit free_form(bgl_graph_t);
+    explicit free_form(graph_t);
     explicit free_form(const topology &);
     template <typename T>
         requires(!std::same_as<T, free_form> && IsUdTopology<T>)
@@ -66,9 +66,13 @@ public:
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned);
+    void serialize(Archive &ar)
+    {
+
+        detail::archive(ar, cereal::base_class<base_bgl_topology>(this));
+    }
 };
 
 } // namespace pagmo

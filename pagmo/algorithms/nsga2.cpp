@@ -50,10 +50,6 @@ see https://www.gnu.org/licenses/. */
 #include <pagmo/utils/genetic_operators.hpp>
 #include <pagmo/utils/multi_objective.hpp>
 
-// NOTE: apparently this must be included *after*
-// the other serialization headers.
-#include <boost/serialization/optional.hpp>
-
 namespace pagmo
 {
 
@@ -61,19 +57,19 @@ nsga2::nsga2(unsigned gen, double cr, double eta_c, double m, double eta_m, unsi
     : m_gen(gen), m_cr(cr), m_eta_c(eta_c), m_m(m), m_eta_m(eta_m), m_e(seed), m_seed(seed), m_verbosity(0u)
 {
     if (cr >= 1. || cr < 0.) {
-        pagmo_throw(std::invalid_argument, "The crossover probability must be in the [0,1[ range, while a value of "
+        pagmo_throw(invalid_parameter_error, "The crossover probability must be in the [0,1[ range, while a value of "
                                                + std::to_string(cr) + " was detected");
     }
     if (m < 0. || m > 1.) {
-        pagmo_throw(std::invalid_argument, "The mutation probability must be in the [0,1] range, while a value of "
+        pagmo_throw(invalid_parameter_error, "The mutation probability must be in the [0,1] range, while a value of "
                                                + std::to_string(cr) + " was detected");
     }
     if (eta_c < 1. || eta_c > 100.) {
-        pagmo_throw(std::invalid_argument, "The distribution index for crossover must be in [1, 100], while a value of "
+        pagmo_throw(invalid_parameter_error, "The distribution index for crossover must be in [1, 100], while a value of "
                                                + std::to_string(eta_c) + " was detected");
     }
     if (eta_m < 1. || eta_m > 100.) {
-        pagmo_throw(std::invalid_argument, "The distribution index for mutation must be in [1, 100], while a value of "
+        pagmo_throw(invalid_parameter_error, "The distribution index for mutation must be in [1, 100], while a value of "
                                                + std::to_string(eta_m) + " was detected");
     }
 }
@@ -104,24 +100,24 @@ population nsga2::evolve(population pop) const
     // We start by checking that the problem is suitable for this
     // particular algorithm.
     if (detail::some_bound_is_equal(prob)) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(incompatible_problem_error,
                     get_name()
                         + " cannot work on problems having a lower bound equal to an upper bound. Check your bounds.");
     }
     if (prob.is_stochastic()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(incompatible_problem_error,
                     "The problem appears to be stochastic " + get_name() + " cannot deal with it");
     }
     if (prob.get_nc() != 0u) {
-        pagmo_throw(std::invalid_argument, "Non linear constraints detected in " + prob.get_name() + " instance. "
+        pagmo_throw(incompatible_problem_error, "Non linear constraints detected in " + prob.get_name() + " instance. "
                                                + get_name() + " cannot deal with them.");
     }
     if (prob.get_nf() < 2u) {
-        pagmo_throw(std::invalid_argument, "This is a multiobjective algorithm, while number of objectives detected in "
+        pagmo_throw(incompatible_problem_error, "This is a multiobjective algorithm, while number of objectives detected in "
                                                + prob.get_name() + " is " + std::to_string(prob.get_nf()));
     }
     if (NP < 5u || (NP % 4 != 0u)) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(insufficient_population_error,
                     "for NSGA-II at least 5 individuals in the population are needed and the "
                     "population size must be a multiple of 4. Detected input population size is: "
                         + std::to_string(NP));
@@ -149,24 +145,24 @@ population nsga2::evolve(population pop) const
                 vector_double ideal_point = ideal(pop.get_f());
                 // Every 50 lines print the column names
                 if (count % 50u == 1u) {
-                    print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:");
+                    pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:");
                     for (decltype(ideal_point.size()) i = 0u; i < ideal_point.size(); ++i) {
                         if (i >= 5u) {
-                            print(std::setw(15), "... :");
+                            pagmo::print(std::setw(15), "... :");
                             break;
                         }
-                        print(std::setw(15), "ideal" + std::to_string(i + 1u) + ":");
+                        pagmo::print(std::setw(15), "ideal" + std::to_string(i + 1u) + ":");
                     }
-                    print('\n');
+                    pagmo::print('\n');
                 }
-                print(std::setw(7), gen, std::setw(15), prob.get_fevals() - fevals0);
+                pagmo::print(std::setw(7), gen, std::setw(15), prob.get_fevals() - fevals0);
                 for (decltype(ideal_point.size()) i = 0u; i < ideal_point.size(); ++i) {
                     if (i >= 5u) {
                         break;
                     }
-                    print(std::setw(15), ideal_point[i]);
+                    pagmo::print(std::setw(15), ideal_point[i]);
                 }
-                print('\n');
+                pagmo::print('\n');
                 ++count;
                 // Logs
                 m_log.emplace_back(gen, prob.get_fevals() - fevals0, ideal_point);
@@ -342,13 +338,6 @@ std::string nsga2::get_extra_info() const
     stream(ss, "\n\tSeed: ", m_seed);
     stream(ss, "\n\tVerbosity: ", m_verbosity);
     return ss.str();
-}
-
-// Object serialization
-template <typename Archive>
-void nsga2::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, m_gen, m_cr, m_eta_c, m_m, m_eta_m, m_e, m_seed, m_verbosity, m_log, m_bfe);
 }
 
 } // namespace pagmo

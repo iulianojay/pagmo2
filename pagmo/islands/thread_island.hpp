@@ -57,12 +57,21 @@ public:
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void save(Archive &, unsigned) const;
+    void save(Archive &ar) const
+    {
+
+        ar(m_use_pool);
+    }
     template <typename Archive>
-    void load(Archive &, unsigned);
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
+    void load(Archive &ar)
+    {
+
+
+            ar(m_use_pool);
+
+    }
 
     bool m_use_pool;
 };
@@ -72,6 +81,5 @@ private:
 PAGMO_S11N_ISLAND_EXPORT_KEY(pagmo::thread_island)
 
 // NOTE: version 1 added the m_use_pool flag.
-BOOST_CLASS_VERSION(pagmo::thread_island, 1)
 
 #endif

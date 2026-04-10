@@ -106,9 +106,13 @@ public:
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned);
+    void serialize(Archive &ar)
+    {
+
+        detail::archive(ar, m_prob_id, m_is_constrained, m_dim);
+    }
 
     // Pointers to member functions are used
     PAGMO_DLL_LOCAL vector_double fitness_impl(detail::cec2009_data::func_ptr, const vector_double &) const;

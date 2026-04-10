@@ -41,8 +41,7 @@ see https://www.gnu.org/licenses/. */
 #include <utility>
 #include <vector>
 
-#include <boost/iterator/indirect_iterator.hpp>
-#include <boost/numeric/conversion/cast.hpp>
+#include <iterator>
 
 #include <pagmo/algorithm.hpp>
 #include <pagmo/bfe.hpp>
@@ -58,7 +57,8 @@ see https://www.gnu.org/licenses/. */
 #include <pagmo/topology.hpp>
 #include <pagmo/type_traits.hpp>
 #include <pagmo/types.hpp>
-
+#include <pagmo/utils/cast.hpp>
+#include <pagmo/utils/indirect_iterator.hpp>
 namespace pagmo
 {
 
@@ -169,8 +169,8 @@ class PAGMO_DLL_PUBLIC archipelago
 
     using container_t = std::vector<std::unique_ptr<island>>;
     using size_type_implementation = container_t::size_type;
-    using iterator_implementation = boost::indirect_iterator<container_t::iterator>;
-    using const_iterator_implementation = boost::indirect_iterator<container_t::const_iterator>;
+    using iterator_implementation = detail::indirect_iterator<container_t::iterator>;
+    using const_iterator_implementation = detail::indirect_iterator<container_t::const_iterator>;
 
     // NOTE: same utility method as in pagmo::island, see there.
     void wait_check_ignore();
@@ -311,7 +311,7 @@ private:
         std::mt19937 eng(static_cast<std::mt19937::result_type>(static_cast<unsigned>(seed)));
         std::uniform_int_distribution<unsigned> udist;
         for (size_type i = 0; i < n; ++i) {
-            push_back(a, p, boost::numeric_cast<population::size_type>(size), udist(eng));
+            push_back(a, p, numeric_cast<population::size_type>(size), udist(eng));
         }
     }
     // algo, prob, rpol, spol.
@@ -324,7 +324,7 @@ private:
         std::mt19937 eng(static_cast<std::mt19937::result_type>(static_cast<unsigned>(seed)));
         std::uniform_int_distribution<unsigned> udist;
         for (size_type i = 0; i < n; ++i) {
-            push_back(a, p, boost::numeric_cast<population::size_type>(size), r_pol, s_pol, udist(eng));
+            push_back(a, p, numeric_cast<population::size_type>(size), r_pol, s_pol, udist(eng));
         }
     }
     // algo, prob, bfe.
@@ -340,7 +340,7 @@ private:
         std::mt19937 eng(static_cast<std::mt19937::result_type>(static_cast<unsigned>(seed)));
         std::uniform_int_distribution<unsigned> udist;
         for (size_type i = 0; i < n; ++i) {
-            push_back(a, p, b, boost::numeric_cast<population::size_type>(size), udist(eng));
+            push_back(a, p, b, numeric_cast<population::size_type>(size), udist(eng));
         }
     }
     // algo, prob, bfe, rpol, spol.
@@ -354,7 +354,7 @@ private:
         std::mt19937 eng(static_cast<std::mt19937::result_type>(static_cast<unsigned>(seed)));
         std::uniform_int_distribution<unsigned> udist;
         for (size_type i = 0; i < n; ++i) {
-            push_back(a, p, b, boost::numeric_cast<population::size_type>(size), r_pol, s_pol, udist(eng));
+            push_back(a, p, b, numeric_cast<population::size_type>(size), r_pol, s_pol, udist(eng));
         }
     }
     // isl, algo, prob.
@@ -366,7 +366,7 @@ private:
         std::mt19937 eng(static_cast<std::mt19937::result_type>(static_cast<unsigned>(seed)));
         std::uniform_int_distribution<unsigned> udist;
         for (size_type i = 0; i < n; ++i) {
-            push_back(isl, a, p, boost::numeric_cast<population::size_type>(size), udist(eng));
+            push_back(isl, a, p, numeric_cast<population::size_type>(size), udist(eng));
         }
     }
     // isl, algo, prob, rpol, spol.
@@ -380,7 +380,7 @@ private:
         std::mt19937 eng(static_cast<std::mt19937::result_type>(static_cast<unsigned>(seed)));
         std::uniform_int_distribution<unsigned> udist;
         for (size_type i = 0; i < n; ++i) {
-            push_back(isl, a, p, boost::numeric_cast<population::size_type>(size), r_pol, s_pol, udist(eng));
+            push_back(isl, a, p, numeric_cast<population::size_type>(size), r_pol, s_pol, udist(eng));
         }
     }
     // isl, algo, prob, bfe.
@@ -393,7 +393,7 @@ private:
         std::mt19937 eng(static_cast<std::mt19937::result_type>(static_cast<unsigned>(seed)));
         std::uniform_int_distribution<unsigned> udist;
         for (size_type i = 0; i < n; ++i) {
-            push_back(isl, a, p, b, boost::numeric_cast<population::size_type>(size), udist(eng));
+            push_back(isl, a, p, b, numeric_cast<population::size_type>(size), udist(eng));
         }
     }
     // isl, algo, prob, bfe, rpol, spol.
@@ -409,7 +409,7 @@ private:
         std::mt19937 eng(static_cast<std::mt19937::result_type>(static_cast<unsigned>(seed)));
         std::uniform_int_distribution<unsigned> udist;
         for (size_type i = 0; i < n; ++i) {
-            push_back(isl, a, p, b, boost::numeric_cast<population::size_type>(size), r_pol, s_pol, udist(eng));
+            push_back(isl, a, p, b, numeric_cast<population::size_type>(size), r_pol, s_pol, udist(eng));
         }
     }
 
@@ -643,10 +643,10 @@ public:
     void set_migrant_handling(migrant_handling);
 
 private:
-    friend class boost::serialization::access;
+    friend class cereal::access;
     // Save to archive.
     template <typename Archive>
-    void save(Archive &ar, unsigned) const
+    void save(Archive &ar) const
     {
         detail::to_archive(ar, m_islands, get_migrants_db(), get_migration_log(), get_topology(),
                            m_migr_type.load(std::memory_order_relaxed),
@@ -654,7 +654,7 @@ private:
     }
     // Load from archive.
     template <typename Archive>
-    void load(Archive &ar, unsigned)
+    void load(Archive &ar)
     {
         // Make sure all evolutions are finished before attempting
         // to load from the archive.
@@ -662,7 +662,7 @@ private:
 
         try {
             // Recover the islands.
-            ar >> m_islands;
+            ar(m_islands);
 
             // Reset and remap the island indices, assign the
             // archi pointers.
@@ -673,20 +673,20 @@ private:
             }
 
             // Load the migrants.
-            ar >> m_migrants;
+            ar(m_migrants);
 
             // Load the migration log.
-            ar >> m_migr_log;
+            ar(m_migr_log);
 
             // Load the topology.
-            ar >> m_topology;
+            ar(m_topology);
 
             // Migration type and migrant handling policy.
             migration_type tmp_migr_type;
             migrant_handling tmp_migr_handling;
 
-            ar >> tmp_migr_type;
-            ar >> tmp_migr_handling;
+            ar(tmp_migr_type);
+            ar(tmp_migr_handling);
 
             m_migr_type.store(tmp_migr_type, std::memory_order_relaxed);
             m_migr_handling.store(tmp_migr_handling, std::memory_order_relaxed);
@@ -695,7 +695,6 @@ private:
             throw;
         }
     }
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
 
     // Private utilities for use only by island.
     // Extract/get/set migrants for the island at the given index.

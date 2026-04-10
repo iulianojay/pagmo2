@@ -30,11 +30,10 @@ see https://www.gnu.org/licenses/. */
 #define PAGMO_CUSTOM_COMPARISONS_HPP
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <type_traits>
 #include <vector>
-
-#include <boost/functional/hash.hpp> // boost::hash_combine
 
 #include <pagmo/concepts.hpp>
 #include <pagmo/type_traits.hpp>
@@ -125,7 +124,7 @@ struct hash_vf {
         std::size_t retval = 0u;
         for (T el : in) {
             // Combine the hash of the current vector with the hashes of the previous ones
-            boost::hash_combine(retval, el);
+            retval ^= std::hash<T>{}(el) + 0x9e3779b9 + (retval << 6) + (retval >> 2);
         }
         return retval;
     }

@@ -4,7 +4,7 @@
 message(STATUS "Configuring TBB dependency...")
 
 # Force a clean TBB configuration to avoid alias conflicts
-CPMAddPackage(
+CPMFindPackage(
   NAME TBB
   GITHUB_REPOSITORY oneapi-src/oneTBB
   VERSION 2022.3.0

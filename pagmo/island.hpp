@@ -29,6 +29,7 @@ see https://www.gnu.org/licenses/. */
 #ifndef PAGMO_ISLAND_HPP
 #define PAGMO_ISLAND_HPP
 
+#include <any>
 #include <concepts>
 #include <functional>
 #include <future>
@@ -43,9 +44,6 @@ see https://www.gnu.org/licenses/. */
 #include <typeinfo>
 #include <utility>
 #include <vector>
-
-#include <boost/any.hpp>
-#include <boost/type_traits/integral_constant.hpp>
 
 #include <pagmo/algorithm.hpp>
 #include <pagmo/bfe.hpp>
@@ -66,11 +64,28 @@ see https://www.gnu.org/licenses/. */
 #include <pagmo/type_traits.hpp>
 #include <pagmo/types.hpp>
 
+// Declares the compile-time cereal name binding, polymorphic caster relation, and
+// archive binding. CEREAL_BIND_TO_ARCHIVES is included here so every DSO that
+// includes this header self-registers the type — required for macOS two-level namespace.
 #define PAGMO_S11N_ISLAND_EXPORT_KEY(isl)                                                                              \
-    BOOST_CLASS_EXPORT_KEY2(pagmo::detail::isl_inner<isl>, "udi " #isl)                                                \
-    BOOST_CLASS_TRACKING(pagmo::detail::isl_inner<isl>, boost::serialization::track_never)
+    namespace cereal                                                                                                   \
+    {                                                                                                                  \
+    namespace detail                                                                                                   \
+    {                                                                                                                  \
+    template <>                                                                                                        \
+    struct binding_name<pagmo::detail::isl_inner<isl>> {                                                               \
+        static constexpr char const *name()                                                                            \
+        {                                                                                                              \
+            return "pagmo::detail::isl_inner<" #isl ">";                                                               \
+        }                                                                                                              \
+    };                                                                                                                 \
+    }                                                                                                                  \
+    } /* end namespaces */                                                                                             \
+    CEREAL_REGISTER_POLYMORPHIC_RELATION(pagmo::detail::isl_inner_base, pagmo::detail::isl_inner<isl>)                 \
+    CEREAL_BIND_TO_ARCHIVES(pagmo::detail::isl_inner<isl>)
 
-#define PAGMO_S11N_ISLAND_IMPLEMENT(isl) BOOST_CLASS_EXPORT_IMPLEMENT(pagmo::detail::isl_inner<isl>)
+// Also called from pagmo/s11n_registrations.cpp (idempotent — safe to call multiple times).
+#define PAGMO_S11N_ISLAND_IMPLEMENT(isl)
 
 #define PAGMO_S11N_ISLAND_EXPORT(isl)                                                                                  \
     PAGMO_S11N_ISLAND_EXPORT_KEY(isl)                                                                                  \
@@ -139,9 +154,9 @@ struct PAGMO_DLL_PUBLIC_INLINE_CLASS isl_inner_base {
     virtual void *get_ptr() = 0;
 
 private:
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned)
+    void serialize(Archive &)
     {
     }
 };
@@ -214,12 +229,12 @@ struct PAGMO_DLL_PUBLIC_INLINE_CLASS isl_inner final : isl_inner_base {
     }
 
 private:
-    friend class boost::serialization::access;
+    friend class cereal::access;
     // Serialization
     template <typename Archive>
-    void serialize(Archive &ar, unsigned)
+    void serialize(Archive &ar)
     {
-        detail::archive(ar, boost::serialization::base_object<isl_inner_base>(*this), m_value);
+        detail::archive(ar, cereal::base_class<isl_inner_base>(this), m_value);
     }
 
 public:
@@ -232,7 +247,6 @@ public:
 
 // Disable Boost.Serialization tracking for the implementation
 // details of island.
-BOOST_CLASS_TRACKING(pagmo::detail::isl_inner_base, boost::serialization::track_never)
 
 namespace pagmo
 {
@@ -340,7 +354,7 @@ namespace detail
 // do anything, but in Python we need to override this getter so that it returns
 // a RAII object that unlocks the GIL, otherwise we could run into deadlocks in Python
 // if isl::wait()/isl::wait_check() holds the GIL while waiting.
-PAGMO_DLL_PUBLIC extern std::function<boost::any()> wait_raii_getter;
+PAGMO_DLL_PUBLIC extern std::function<std::any()> wait_raii_getter;
 
 // NOTE: this structure holds an std::function that implements the logic for the selection of the UDI
 // type in the constructor of island_data. The logic is decoupled so that we can override the default logic with
@@ -1190,14 +1204,14 @@ public:
     void *get_ptr();
 
 private:
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void save(Archive &ar, unsigned) const
+    void save(Archive &ar) const
     {
         detail::to_archive(ar, m_ptr->isl_ptr, get_algorithm(), get_population(), m_ptr->r_pol, m_ptr->s_pol);
     }
     template <typename Archive>
-    void load(Archive &ar, unsigned)
+    void load(Archive &ar)
     {
         // Wait for ongoing evolutions to finish.
         wait_check_ignore();
@@ -1209,7 +1223,6 @@ private:
             throw;
         }
     }
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
 
     // Data used in the migration machinery:
     // - the island's population (represented via individuals_group_t),

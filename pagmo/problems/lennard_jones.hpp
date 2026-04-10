@@ -76,9 +76,13 @@ public:
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned);
+    void serialize(Archive &ar)
+    {
+
+        ar & m_atoms;
+    }
 
     // Helper function that transforms the decision vector x in atoms positions r
     PAGMO_DLL_LOCAL double _r(unsigned, unsigned, const vector_double &) const;

@@ -63,13 +63,6 @@ ring::ring(std::size_t n, double w) : m_weight(w)
     }
 }
 
-// Serialization.
-template <typename Archive>
-void ring::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, boost::serialization::base_object<base_bgl_topology>(*this), m_weight);
-}
-
 // Add vertex.
 void ring::push_back()
 {

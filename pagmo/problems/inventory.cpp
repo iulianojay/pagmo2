@@ -97,13 +97,6 @@ std::string inventory::get_extra_info() const
     return ss.str();
 }
 
-// Object serialization
-template <typename Archive>
-void inventory::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, m_weeks, m_sample_size, m_e, m_seed);
-}
-
 } // namespace pagmo
 
 PAGMO_S11N_PROBLEM_IMPLEMENT(pagmo::inventory)

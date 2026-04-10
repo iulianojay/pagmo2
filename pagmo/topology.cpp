@@ -58,12 +58,12 @@ namespace detail
 void topology_check_edge_weight(double w)
 {
     if (!std::isfinite(w)) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_value_error,
                     "invalid weight for the edge of a topology: the value " + std::to_string(w) + " is not finite");
     }
     if (w < 0. || w > 1.) {
-        pagmo_throw(std::invalid_argument, "invalid weight for the edge of a topology: the value " + std::to_string(w)
-                                               + " is not in the [0., 1.] range");
+        pagmo_throw(invalid_value_error, "invalid weight for the edge of a topology: the value " + std::to_string(w)
+                                             + " is not in the [0., 1.] range");
     }
 }
 
@@ -112,7 +112,7 @@ std::pair<std::vector<std::size_t>, vector_double> topology::get_connections(std
 
     // Check the returned value.
     if (retval.first.size() != retval.second.size()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(dimension_mismatch_error,
                     "An invalid pair of vectors was returned by the 'get_connections()' method of the '" + get_name()
                         + "' topology: the vector of connecting islands has a size of "
                         + std::to_string(retval.first.size())
@@ -123,7 +123,7 @@ std::pair<std::vector<std::size_t>, vector_double> topology::get_connections(std
     for (const auto &p : retval.second) {
         if (!std::isfinite(p)) {
             pagmo_throw(
-                std::invalid_argument,
+                invalid_value_error,
                 "An invalid non-finite migration probability of " + std::to_string(p)
                     + " was detected in the vector of migration probabilities returned by the 'get_connections()' "
                       "method of the '"
@@ -131,7 +131,7 @@ std::pair<std::vector<std::size_t>, vector_double> topology::get_connections(std
         }
         if (p < 0. || p > 1.) {
             pagmo_throw(
-                std::invalid_argument,
+                invalid_value_error,
                 "An invalid migration probability of " + std::to_string(p)
                     + " was detected in the vector of migration probabilities returned by the 'get_connections()' "
                       "method of the '"
@@ -154,9 +154,9 @@ void topology::push_back(unsigned n)
     }
 }
 
-bgl_graph_t topology::to_bgl() const
+graph_t topology::to_graph() const
 {
-    return ptr()->to_bgl();
+    return ptr()->to_graph();
 }
 
 // Get the type of the UDT.

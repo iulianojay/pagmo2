@@ -53,15 +53,15 @@ ihs::ihs(unsigned gen, double phmcr, double ppar_min, double ppar_max, double bw
       m_e(seed), m_seed(seed), m_verbosity(0u)
 {
     if (phmcr > 1 || phmcr < 0 || ppar_min > 1 || ppar_min < 0 || ppar_max > 1 || ppar_max < 0) {
-        pagmo_throw(std::invalid_argument, "The probability of choosing from memory (phmcr) and the pitch "
+        pagmo_throw(invalid_parameter_error, "The probability of choosing from memory (phmcr) and the pitch "
                                            "adjustment rates (ppar_min, ppar_max) must all be in the [0,1] range");
     }
     if (ppar_min > ppar_max) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "The minimum pitch adjustment rate must not be greater than maximum pitch adjustment rate");
     }
     if (bw_min <= 0 || bw_max < bw_min) {
-        pagmo_throw(std::invalid_argument, "The bandwidth values must be positive, and minimum bandwidth must not "
+        pagmo_throw(invalid_parameter_error, "The bandwidth values must be positive, and minimum bandwidth must not "
                                            "be greater than maximum bandwidth");
     }
 }
@@ -91,15 +91,15 @@ population ihs::evolve(population pop) const
         return pop;
     }
     if (!pop.size()) {
-        pagmo_throw(std::invalid_argument, get_name() + " does not work on an empty population");
+        pagmo_throw(insufficient_population_error, get_name() + " does not work on an empty population");
     }
     if (prob.get_nc() != 0u && prob.get_nobj() > 1u) {
-        pagmo_throw(std::invalid_argument, "Multiple objectives and non linear constraints detected in the "
+        pagmo_throw(incompatible_problem_error, "Multiple objectives and non linear constraints detected in the "
                                                + prob.get_name() + " instance. " + get_name()
                                                + " cannot deal with this type of problem.");
     }
     if (prob.is_stochastic()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "The problem appears to be stochastic " + get_name() + " cannot deal with it");
     }
     // ---------------------------------------------------------------------------------------------------------
@@ -237,13 +237,6 @@ std::string ihs::get_extra_info() const
     return ss.str();
 }
 
-// Object serialization
-template <typename Archive>
-void ihs::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, m_gen, m_phmcr, m_ppar_min, m_ppar_max, m_bw_min, m_bw_max, m_e, m_seed, m_verbosity, m_log);
-}
-
 // logging is complex fir ihs as the algorithm is an "any-problem" wannabe
 void ihs::log_a_line(const population &pop, unsigned &count, unsigned long long fevals0, double ppar_cur,
                      double bw_cur) const
@@ -290,27 +283,27 @@ void ihs::log_a_line(const population &pop, unsigned &count, unsigned long long 
     // Every 50 lines print the column names (fevals, ppar, bw, dx, df, n. constraints violated, violation norm,
     // ideal [or best])
     if (count % 50u == 1u) {
-        print("\n", std::setw(7), "Fevals:", std::setw(15), "ppar:", std::setw(15), "bw:", std::setw(15),
+        pagmo::print("\n", std::setw(7), "Fevals:", std::setw(15), "ppar:", std::setw(15), "bw:", std::setw(15),
               "dx:", std::setw(15), "df:", std::setw(15), "Violated:", std::setw(15), "Viol. Norm:");
         for (decltype(ideal_point.size()) i = 0u; i < ideal_point.size(); ++i) {
             if (i >= 5u) {
-                print(std::setw(15), "... :");
+                pagmo::print(std::setw(15), "... :");
                 break;
             }
-            print(std::setw(15), "ideal" + std::to_string(i + 1u) + ":");
+            pagmo::print(std::setw(15), "ideal" + std::to_string(i + 1u) + ":");
         }
-        print('\n');
+        pagmo::print('\n');
     }
 
-    print(std::setw(7), prob.get_fevals() - fevals0, std::setw(15), ppar_cur, std::setw(15), bw_cur, std::setw(15), dx,
+    pagmo::print(std::setw(7), prob.get_fevals() - fevals0, std::setw(15), ppar_cur, std::setw(15), bw_cur, std::setw(15), dx,
           std::setw(15), df, std::setw(15), n, std::setw(15), l);
     for (decltype(ideal_point.size()) i = 0u; i < ideal_point.size(); ++i) {
         if (i >= 5u) {
             break;
         }
-        print(std::setw(15), ideal_point[i]);
+        pagmo::print(std::setw(15), ideal_point[i]);
     }
-    print('\n');
+    pagmo::print('\n');
 
     ++count;
     // Logs

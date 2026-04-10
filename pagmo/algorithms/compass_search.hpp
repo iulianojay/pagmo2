@@ -224,9 +224,21 @@ public:
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned);
+    void save(Archive &ar) const
+    {
+
+        detail::archive(ar, cereal::base_class<not_population_based>(this), m_max_fevals, m_start_range, m_stop_range,
+                        m_reduction_coeff, m_verbosity, m_log);
+    }
+    template <typename Archive>
+    void load(Archive &ar)
+    {
+
+        detail::archive(ar, cereal::base_class<not_population_based>(this), m_max_fevals, m_start_range, m_stop_range,
+                        m_reduction_coeff, m_verbosity, m_log);
+    }
 
     unsigned m_max_fevals;
     double m_start_range;

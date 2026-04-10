@@ -78,24 +78,24 @@ bool compare_fc(const vector_double &f1, const vector_double &f2, vector_double:
 {
     // 1 - The two fitness must have the same dimension
     if (f1.size() != f2.size()) {
-        pagmo_throw(std::invalid_argument, "Fitness dimensions should be equal: " + std::to_string(f1.size())
-                                               + " != " + std::to_string(f2.size()));
+        pagmo_throw(dimension_mismatch_error, "Fitness dimensions should be equal: " + std::to_string(f1.size())
+                                                  + " != " + std::to_string(f2.size()));
     }
     // 2 - The dimension of the fitness vectors must be at least 1
     if (f1.size() < 1u) {
-        pagmo_throw(std::invalid_argument, "Fitness dimension should be at least 1 to compare: a dimension of "
+        pagmo_throw(multi_objective_error, "Fitness dimension should be at least 1 to compare: a dimension of "
                                                + std::to_string(f1.size()) + " was detected. ");
     }
     // 3 - The dimension of the tolerance vector must be that of the fitness minus one
     if (f1.size() - 1u != tol.size()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(dimension_mismatch_error,
                     "Tolerance vector dimension is detected to be: " + std::to_string(tol.size())
                         + ", while the fitness dimension is: " + std::to_string(f1.size())
                         + ", I was expecting the tolerance vector dimension to be: " + std::to_string(f1.size() - 1u));
     }
     // 4 - The number of equality constraints must be at most f1.size()-1
     if (neq > f1.size() - 1u) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(bounds_constraint_error,
                     "Number of equality constraints declared: " + std::to_string(neq)
                         + " while fitness vector has dimension: " + std::to_string(f1.size())
                         + "(it must be strictly smaller as the objfun is assumed to be at position 0)");
@@ -139,7 +139,7 @@ bool compare_fc(const vector_double &f1, const vector_double &f2, vector_double:
     // 1 - The dimension of the fitness vector must be at least 1 (this check
     // cannot be removed and delegated to the other overload as f1.size()-1u is used)
     if (f1.size() < 1u) {
-        pagmo_throw(std::invalid_argument, "Fitness dimension should be at least 1 to compare: a dimension of "
+        pagmo_throw(multi_objective_error, "Fitness dimension should be at least 1 to compare: a dimension of "
                                                + std::to_string(f1.size()) + " was detected. ");
     }
     return compare_fc(f1, f2, neq, vector_double(f1.size() - 1u, tol));
@@ -230,7 +230,7 @@ std::vector<pop_size_t> sort_population_con(const std::vector<vector_double> &in
     auto M = input_f[0].size();
     // 2 - The dimension of the fitness vectors must be at least 1
     if (M < 1u) {
-        pagmo_throw(std::invalid_argument, "Fitness dimension should be at least 1 to sort: a dimension of "
+        pagmo_throw(multi_objective_error, "Fitness dimension should be at least 1 to sort: a dimension of "
                                                + std::to_string(M) + " was detected. ");
     }
     vector_double tol_vector(M - 1u, tol);

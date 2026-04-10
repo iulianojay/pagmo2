@@ -73,7 +73,7 @@ mbh::mbh() : m_algorithm(compass_search{}), m_stop(5u), m_perturb(1, 1e-2), m_ve
 void mbh::scalar_ctor_impl(double perturb)
 {
     if (std::isnan(perturb) || perturb > 1. || perturb <= 0.) {
-        pagmo_throw(std::invalid_argument, "The scalar perturbation must be in (0, 1], while a value of "
+        pagmo_throw(invalid_parameter_error, "The scalar perturbation must be in (0, 1], while a value of "
                                                + std::to_string(perturb) + " was detected.");
     }
 }
@@ -82,7 +82,7 @@ void mbh::vector_ctor_impl(const vector_double &perturb)
 {
     if (!std::all_of(perturb.begin(), perturb.end(),
                      [](double item) { return (!std::isnan(item) && item > 0. && item <= 1.); })) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "The perturbation must have all components in (0, 1], while that is not the case.");
     }
 }
@@ -116,11 +116,11 @@ population mbh::evolve(population pop) const
 
     // PREAMBLE-------------------------------------------------------------------------------------------------
     if (prob.get_nobj() != 1u) {
-        pagmo_throw(std::invalid_argument, "Multiple objectives detected in " + prob.get_name() + " instance. "
+        pagmo_throw(incompatible_problem_error, "Multiple objectives detected in " + prob.get_name() + " instance. "
                                                + get_name() + " cannot deal with them");
     }
     if (prob.is_stochastic()) {
-        pagmo_throw(std::invalid_argument, "The input problem " + prob.get_name() + " appears to be stochastic, "
+        pagmo_throw(incompatible_problem_error, "The input problem " + prob.get_name() + " appears to be stochastic, "
                                                + get_name() + " cannot deal with it");
     }
     // Get out if there is nothing to do.
@@ -137,7 +137,7 @@ population mbh::evolve(population pop) const
     }
     // Check that the perturbation vector size equals the size of the problem
     if (perturb.size() != dim) {
-        pagmo_throw(std::invalid_argument, "The perturbation vector size is: " + std::to_string(perturb.size())
+        pagmo_throw(dimension_mismatch_error, "The perturbation vector size is: " + std::to_string(perturb.size())
                                                + ", while the problem dimension is: " + std::to_string(dim)
                                                + ". They need to be equal for MBH to work.");
     }
@@ -176,7 +176,7 @@ population mbh::evolve(population pop) const
             // Prints a log line after each call to the inner algorithm
             // 1 - Every 50 lines print the column names
             if (count % 50u == 1u) {
-                print("\n", std::setw(7), "Fevals:", std::setw(15), "Best:", std::setw(15), "Violated:", std::setw(15),
+                pagmo::print("\n", std::setw(7), "Fevals:", std::setw(15), "Best:", std::setw(15), "Violated:", std::setw(15),
                       "Viol. Norm:", std::setw(15), "Trial:", '\n');
             }
             // 2 - Print
@@ -187,7 +187,7 @@ population mbh::evolve(population pop) const
                 cur_best_f.data() + 1 + nec, cur_best_f.data() + cur_best_f.size(), prob.get_c_tol().data() + nec);
             auto n = prob.get_nc() - c1eq.first - c1ineq.first;
             auto l = c1eq.second + c1ineq.second;
-            print(std::setw(7), prob.get_fevals() - fevals0, std::setw(15), cur_best_f[0], std::setw(15), n,
+            pagmo::print(std::setw(7), prob.get_fevals() - fevals0, std::setw(15), cur_best_f[0], std::setw(15), n,
                   std::setw(15), l, std::setw(15), i);
             if (!prob.feasibility_f(pop.get_f()[pop.best_idx()])) {
                 std::cout << " i";
@@ -222,7 +222,7 @@ void mbh::set_perturb(const vector_double &perturb)
 {
     if (!std::all_of(perturb.begin(), perturb.end(),
                      [](double item) { return (!std::isnan(item) && item > 0. && item <= 1.); })) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "The perturbation must have all components in (0, 1], while that is not the case.");
     }
     m_perturb = perturb;
@@ -256,13 +256,6 @@ std::string mbh::get_extra_info() const
     stream(ss, "\n\tInner algorithm extra info: ");
     stream(ss, "\n", m_algorithm.get_extra_info());
     return ss.str();
-}
-
-// Object serialization.
-template <typename Archive>
-void mbh::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, m_algorithm, m_stop, m_perturb, m_e, m_seed, m_verbosity, m_log);
 }
 
 } // namespace pagmo

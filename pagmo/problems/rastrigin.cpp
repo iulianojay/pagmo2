@@ -46,7 +46,7 @@ namespace pagmo
 rastrigin::rastrigin(unsigned dim) : m_dim(dim)
 {
     if (dim < 1u) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(problem_config_error,
                     "Rastrigin Function must have minimum 1 dimension, " + std::to_string(dim) + " requested");
     }
 }
@@ -154,13 +154,6 @@ std::vector<sparsity_pattern> rastrigin::hessians_sparsity() const
 vector_double rastrigin::best_known() const
 {
     return vector_double(m_dim, 0.);
-}
-
-// Object serialization
-template <typename Archive>
-void rastrigin::serialize(Archive &ar, unsigned)
-{
-    ar & m_dim;
 }
 
 } // namespace pagmo

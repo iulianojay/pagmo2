@@ -51,12 +51,12 @@ namespace pagmo
 lennard_jones::lennard_jones(unsigned atoms) : m_atoms(atoms)
 {
     if (atoms < 3) {
-        pagmo_throw(std::invalid_argument, "The number of atoms in a Lennard Jones Clusters problem must be "
+        pagmo_throw(problem_config_error, "The number of atoms in a Lennard Jones Clusters problem must be "
                                            "positive and greater than 2, while a number of "
                                                + std::to_string(atoms) + " was detected.");
     }
     if (m_atoms - 2u > std::numeric_limits<unsigned>::max() / 3u) {
-        pagmo_throw(std::overflow_error,
+        pagmo_throw(size_limit_error,
                     "Overflow caused by the number of atoms requested: " + std::to_string(m_atoms));
     }
 }
@@ -119,13 +119,6 @@ std::pair<vector_double, vector_double> lennard_jones::get_bounds() const
 std::string lennard_jones::get_name() const
 {
     return "Lennard Jones Cluster (" + std::to_string(m_atoms) + " atoms)";
-}
-
-// Object serialization
-template <typename Archive>
-void lennard_jones::serialize(Archive &ar, unsigned)
-{
-    ar & m_atoms;
 }
 
 // Helper function that transforms the decision vector x in atoms positions r

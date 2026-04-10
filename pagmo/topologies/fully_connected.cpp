@@ -27,7 +27,6 @@ GNU Lesser General Public License along with the PaGMO library.  If not,
 see https://www.gnu.org/licenses/. */
 
 #include <atomic>
-#include <cassert>
 #include <cstddef>
 #include <limits>
 #include <stdexcept>
@@ -35,15 +34,12 @@ see https://www.gnu.org/licenses/. */
 #include <utility>
 #include <vector>
 
-// #include <boost/graph/adjacency_list.hpp>
-#include <boost/numeric/conversion/cast.hpp>
-
 #include <pagmo/exceptions.hpp>
 #include <pagmo/s11n.hpp>
 #include <pagmo/topologies/fully_connected.hpp>
 #include <pagmo/topology.hpp>
 #include <pagmo/types.hpp>
-
+#include <pagmo/utils/cast.hpp>
 // MINGW-specific warnings.
 #if defined(__GNUC__) && defined(__MINGW32__)
 #pragma GCC diagnostic push
@@ -89,17 +85,16 @@ std::pair<std::vector<std::size_t>, vector_double> fully_connected::get_connecti
     const auto num_vertices = m_num_vertices.load(std::memory_order_relaxed);
 
     if (i >= num_vertices) {
-        pagmo_throw(std::invalid_argument,
-                    "Cannot get the connections to the vertex at index " + std::to_string(i)
-                        + " in a fully connected topology: the number of vertices in the topology is only "
-                        + std::to_string(num_vertices));
+        pagmo_throw(index_error, "Cannot get the connections to the vertex at index " + std::to_string(i)
+                                     + " in a fully connected topology: the number of vertices in the topology is only "
+                                     + std::to_string(num_vertices));
     }
 
     // Init the retval.
     std::pair<std::vector<std::size_t>, vector_double> retval;
 
     // Prepare storage for the indices list.
-    retval.first.resize(boost::numeric_cast<decltype(retval.first.size())>(num_vertices - 1u));
+    retval.first.resize(numeric_cast<decltype(retval.first.size())>(num_vertices - 1u));
 
     // Fill in the indices list.
     for (std::size_t j = 0; j < i; ++j) {
@@ -110,15 +105,15 @@ std::pair<std::vector<std::size_t>, vector_double> fully_connected::get_connecti
     }
 
     // Fill the weights list with m_weight.
-    retval.second.resize(boost::numeric_cast<decltype(retval.second.size())>(num_vertices - 1u), m_weight);
+    retval.second.resize(numeric_cast<decltype(retval.second.size())>(num_vertices - 1u), m_weight);
 
     return retval;
 }
 
-// Convert to bgl_graph_t.
-bgl_graph_t fully_connected::to_bgl() const
+// Convert to graph_t.
+graph_t fully_connected::to_graph() const
 {
-    bgl_graph_t retval;
+    graph_t retval;
 
     // Fetch the number of vertices and the weight.
     const auto nv = m_num_vertices.load();
@@ -129,28 +124,20 @@ bgl_graph_t fully_connected::to_bgl() const
             break;
         case 1u:
             // Add a single vertex, no edges.
-            boost::add_vertex(retval);
+            retval.add_vertex(0);
             break;
         default:
-            // Add the edges.
-            // NOTE: adding the edges will automatically
-            // create the vertices too.
+            // Add all vertices first.
+            for (std::size_t i = 0; i < nv; ++i) {
+                retval.add_vertex(0);
+            }
+            // Add all edges (fully connected, no self-loops).
             for (std::size_t i = 0; i < nv; ++i) {
                 for (std::size_t j = 0; j < nv; ++j) {
                     if (i == j) {
-                        // NOTE: avoid connecting i to itself.
                         continue;
                     }
-
-                    // Establish the connection between i and j.
-                    const auto result = boost::add_edge(
-                        boost::vertex(boost::numeric_cast<bgl_graph_t::vertices_size_type>(i), retval),
-                        boost::vertex(boost::numeric_cast<bgl_graph_t::vertices_size_type>(j), retval), retval);
-
-                    assert(result.second);
-
-                    // Assign the weight too.
-                    retval[result.first] = w;
+                    retval.add_edge(i, j, w);
                 }
             }
     }
@@ -181,24 +168,6 @@ double fully_connected::get_weight() const
 std::size_t fully_connected::num_vertices() const
 {
     return m_num_vertices.load(std::memory_order_relaxed);
-}
-
-// Serialization.
-template <typename Archive>
-void fully_connected::save(Archive &ar, unsigned) const
-{
-    detail::archive(ar, m_weight, m_num_vertices.load(std::memory_order_relaxed));
-}
-
-template <typename Archive>
-void fully_connected::load(Archive &ar, unsigned)
-{
-    std::size_t num_vertices;
-
-    ar >> m_weight;
-    ar >> num_vertices;
-
-    m_num_vertices.store(num_vertices, std::memory_order_relaxed);
 }
 
 } // namespace pagmo

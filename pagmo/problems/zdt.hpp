@@ -186,9 +186,13 @@ public:
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned);
+    void serialize(Archive &ar)
+    {
+
+        detail::archive(ar, m_prob_id, m_param);
+    }
 
     PAGMO_DLL_LOCAL vector_double zdt1_fitness(const vector_double &) const;
     PAGMO_DLL_LOCAL vector_double zdt2_fitness(const vector_double &) const;

@@ -82,8 +82,8 @@ double binomial_coefficient(vector_double::size_type n, vector_double::size_type
         return std::round(std::exp(std::lgamma(static_cast<double>(n) + 1.) - std::lgamma(static_cast<double>(k) + 1.)
                                    - std::lgamma(static_cast<double>(n) - static_cast<double>(k) + 1.)));
     } else {
-        pagmo_throw(std::invalid_argument, "The binomial coefficient is only defined for k<=n, you requested n="
-                                               + std::to_string(n) + " and k=" + std::to_string(k));
+        pagmo_throw(utility_error, "The binomial coefficient is only defined for k<=n, you requested n="
+                                       + std::to_string(n) + " and k=" + std::to_string(k));
     }
 }
 
@@ -114,7 +114,7 @@ std::vector<std::vector<vector_double::size_type>> kNN(const std::vector<vector_
     }
     auto M = points[0].size();
     if (!std::all_of(points.begin(), points.end(), [M](const vector_double &p) { return p.size() == M; })) {
-        pagmo_throw(std::invalid_argument, "All points must have the same dimensionality for k-NN to be invoked");
+        pagmo_throw(dimension_mismatch_error, "All points must have the same dimensionality for k-NN to be invoked");
     }
     // loop through the points
     for (decltype(N) i = 0u; i < N; ++i) {

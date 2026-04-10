@@ -181,10 +181,10 @@ public:
     unsigned long long greatest_contributor(const vector_double &) const;
 
 private:
-    friend class boost::serialization::access;
+    friend class cereal::access;
     // Object serialization
     template <typename Archive>
-    void serialize(Archive &ar, unsigned)
+    void serialize(Archive &ar)
     {
         detail::archive(ar, m_points, m_copy_points, m_verify);
     }

@@ -31,14 +31,13 @@ see https://www.gnu.org/licenses/. */
 #include <iomanip>
 #include <iostream>
 #include <iterator>
+#include <numbers>
 #include <numeric>
 #include <random>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
-
-#include <boost/math/constants/constants.hpp>
 
 #include <pagmo/algorithm.hpp>
 #include <pagmo/algorithms/gaco.hpp>
@@ -49,10 +48,6 @@ see https://www.gnu.org/licenses/. */
 #include <pagmo/s11n.hpp>
 #include <pagmo/types.hpp>
 #include <pagmo/utils/constrained.hpp>
-
-// NOTE: apparently this must be included *after*
-// the other serialization headers.
-#include <boost/serialization/optional.hpp>
 
 namespace pagmo
 {
@@ -65,28 +60,28 @@ gaco::gaco(unsigned gen, unsigned ker, double q, double oracle, double acc, unsi
       m_gen_mark(1u), m_fevals(0u)
 {
     if (acc < 0.) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "The accuracy parameter must be >=0, while a value of " + std::to_string(acc) + " was detected");
     }
     if (focus < 0.) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "The focus parameter must be >=0  while a value of " + std::to_string(focus) + " was detected");
     }
     if ((threshold < 1 || threshold > gen) && gen != 0 && memory == false) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "If memory is inactive, the threshold parameter must be either in [1,m_gen] while a value of "
                         + std::to_string(threshold) + " was detected");
     }
     if (threshold < 1 && gen != 0 && memory == true) {
-        pagmo_throw(std::invalid_argument, "If memory is active, the threshold parameter must be >=1 while a value of "
+        pagmo_throw(invalid_parameter_error, "If memory is active, the threshold parameter must be >=1 while a value of "
                                                + std::to_string(threshold) + " was detected");
     }
     if (q < 0.) {
-        pagmo_throw(std::invalid_argument, "The convergence speed parameter must be >=0  while a value of "
+        pagmo_throw(invalid_parameter_error, "The convergence speed parameter must be >=0  while a value of "
                                                + std::to_string(q) + " was detected");
     }
     if (ker < 2u) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "The ker size parameter must be >=2  while a value of " + std::to_string(ker) + " was detected");
     }
 }
@@ -148,23 +143,23 @@ population gaco::evolve(population pop) const
         return pop;
     }
     if (prob.is_stochastic()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(incompatible_problem_error,
                     "The problem appears to be stochastic " + get_name() + " cannot deal with it");
     }
     if (m_gen == 0u) {
         return pop;
     }
     if (pop_size < 2u) {
-        pagmo_throw(std::invalid_argument, get_name() + " needs at least 2 individuals in the population, "
+        pagmo_throw(insufficient_population_error, get_name() + " needs at least 2 individuals in the population, "
                                                + std::to_string(pop.size()) + " detected");
     }
     // I verify that the solution archive is smaller or equal than the population size
     if (m_ker > pop_size) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     get_name() + " cannot work with a solution archive bigger than the population size");
     }
     if (n_obj != 1u) {
-        pagmo_throw(std::invalid_argument, "Multiple objectives detected in " + prob.get_name() + " instance. "
+        pagmo_throw(incompatible_problem_error, "Multiple objectives detected in " + prob.get_name() + " instance. "
                                                + get_name() + " cannot deal with them");
     }
 
@@ -260,17 +255,17 @@ population gaco::evolve(population pop) const
                 // Every line print the column names
                 if (m_memory == false) {
                     if (count_screen % 50u == 1u) {
-                        print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15),
+                        pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15),
                               "Best:", std::setw(15), "Kernel:", std::setw(15), "Oracle:", std::setw(15),
                               "dx:", std::setw(15), std::setw(15), "dp:", '\n');
                     }
 
                 } else if ((m_memory == true && m_counter == 1) || (m_memory == true && m_counter % 50u == 1u)) {
-                    print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
+                    pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
                           "Kernel:", std::setw(15), "Oracle:", std::setw(15), "dx:", std::setw(15), std::setw(15),
                           "dp:", '\n');
                 }
-                print(std::setw(7), gen, std::setw(15), m_fevals, std::setw(15), best_fit, std::setw(15), m_ker,
+                pagmo::print(std::setw(7), gen, std::setw(15), m_fevals, std::setw(15), best_fit, std::setw(15), m_ker,
                       std::setw(15), m_oracle, std::setw(15), dx, std::setw(15), dp, '\n');
 
                 ++count_screen;
@@ -427,11 +422,11 @@ population gaco::evolve(population pop) const
             dp = std::abs(sol_archive[m_ker - 1][0] - sol_archive[0][0]);
 
             if (m_gen == 1) {
-                print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
+                pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
                       "Kernel:", std::setw(15), "Oracle:", std::setw(15), "dx:", std::setw(15), std::setw(15),
                       "dp:", '\n');
             }
-            print(std::setw(7), m_gen, std::setw(15), m_fevals, std::setw(15), pop.champion_f()[0], std::setw(15),
+            pagmo::print(std::setw(7), m_gen, std::setw(15), m_fevals, std::setw(15), pop.champion_f()[0], std::setw(15),
                   m_ker, std::setw(15), m_oracle, std::setw(15), dx, std::setw(15), dp, '\n');
 
             // Logs
@@ -481,15 +476,6 @@ std::string gaco::get_extra_info() const
     stream(ss, "\n\tVerbosity: ", m_verbosity);
 
     return ss.str();
-}
-
-// Object serialization
-template <typename Archive>
-void gaco::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, m_gen, m_acc, m_impstop, m_evalstop, m_focus, m_ker, m_oracle, m_e, m_seed, m_verbosity, m_log,
-                    m_res, m_threshold, m_q, m_n_gen_mark, m_memory, m_counter, m_sol_archive, m_n_evalstop,
-                    m_n_impstop, m_gen_mark, m_fevals, m_bfe);
 }
 
 /**
@@ -707,7 +693,7 @@ void gaco::pheromone_computation(const unsigned gen, vector_double &prob_cumulat
             double sum_omega = 0;
 
             for (decltype(m_ker) l = 1; l <= m_ker; ++l) {
-                omega_new = 1.0 / (m_q * m_ker * std::sqrt(2 * boost::math::constants::pi<double>()))
+                omega_new = 1.0 / (m_q * m_ker * std::sqrt(2 * std::numbers::pi))
                             * std::exp(-std::pow(l - 1.0, 2) / (2.0 * std::pow(m_q, 2) * std::pow(m_ker, 2)));
                 omega_vec[l - 1] = omega_new;
                 sum_omega += omega_new;
@@ -730,7 +716,7 @@ void gaco::pheromone_computation(const unsigned gen, vector_double &prob_cumulat
         double sum_omega = 0;
 
         for (decltype(m_ker) l = 1; l <= m_ker; ++l) {
-            omega_new = 1.0 / (m_q * m_ker * std::sqrt(2 * boost::math::constants::pi<double>()))
+            omega_new = 1.0 / (m_q * m_ker * std::sqrt(2 * std::numbers::pi))
                         * std::exp(-std::pow(l - 1.0, 2) / (2.0 * std::pow(m_q, 2) * std::pow(m_ker, 2)));
             omega_vec[l - 1] = omega_new;
             sum_omega += omega_new;

@@ -27,6 +27,7 @@ GNU Lesser General Public License along with the PaGMO library.  If not,
 see https://www.gnu.org/licenses/. */
 
 #include <algorithm>
+#include <any>
 #include <cassert>
 #include <cmath>
 #include <exception>
@@ -57,10 +58,6 @@ see https://www.gnu.org/licenses/. */
 #include <IpTypes.hpp>
 #undef HAVE_CSTDDEF
 
-#include <boost/any.hpp>
-#include <boost/numeric/conversion/cast.hpp>
-#include <boost/serialization/map.hpp>
-
 #include <pagmo/algorithm.hpp>
 #include <pagmo/algorithms/ipopt.hpp>
 #include <pagmo/algorithms/not_population_based.hpp>
@@ -72,6 +69,7 @@ see https://www.gnu.org/licenses/. */
 #include <pagmo/rng.hpp>
 #include <pagmo/s11n.hpp>
 #include <pagmo/types.hpp>
+#include <pagmo/utils/cast.hpp>
 #include <pagmo/utils/constrained.hpp>
 
 namespace pagmo
@@ -87,9 +85,7 @@ namespace
 using ipopt_result_map_t = std::unordered_map<Ipopt::ApplicationReturnStatus, std::string>;
 
 #define PAGMO_DETAIL_IPOPT_RES_ENTRY(name)                                                                             \
-    {                                                                                                                  \
-        Ipopt::name, #name " (value = " + std::to_string(static_cast<int>(Ipopt::name)) + ")"                          \
-    }
+    {Ipopt::name, #name " (value = " + std::to_string(static_cast<int>(Ipopt::name)) + ")"}
 
 const ipopt_result_map_t ipopt_results = {PAGMO_DETAIL_IPOPT_RES_ENTRY(Solve_Succeeded),
                                           PAGMO_DETAIL_IPOPT_RES_ENTRY(Solved_To_Acceptable_Level),
@@ -138,7 +134,7 @@ struct ipopt_nlp final : Ipopt::TNLP {
 
         // Check the problem is single-objective.
         if (m_prob.get_nobj() > 1u) {
-            pagmo_throw(std::invalid_argument,
+            pagmo_throw(incompatible_problem_error,
                         std::to_string(m_prob.get_nobj()) + " objectives were detected in the input problem named '"
                             + m_prob.get_name()
                             + "', but the ipopt algorithm can solve only single-objective problems");
@@ -146,7 +142,7 @@ struct ipopt_nlp final : Ipopt::TNLP {
 
         // We need the gradient.
         if (!m_prob.has_gradient()) {
-            pagmo_throw(std::invalid_argument, "the ipopt algorithm needs the gradient, but the problem named '"
+            pagmo_throw(incompatible_problem_error, "the ipopt algorithm needs the gradient, but the problem named '"
                                                    + m_prob.get_name() + "' does not provide it");
         }
 
@@ -174,7 +170,7 @@ struct ipopt_nlp final : Ipopt::TNLP {
             const auto it = std::lower_bound(sp.begin(), sp.end(), sparsity_pattern::value_type(1u, 0u));
             // Transform it into the Ipopt format: convert to Index and decrease the first index of each pair by one.
             std::transform(it, sp.end(), std::back_inserter(m_jac_sp), [](const sparsity_pattern::value_type &p) {
-                return std::make_pair(boost::numeric_cast<Index>(p.first - 1u), boost::numeric_cast<Index>(p.second));
+                return std::make_pair(numeric_cast<Index>(p.first - 1u), numeric_cast<Index>(p.second));
             });
             if (m_prob.has_gradient_sparsity()) {
                 // Store the objfun gradient sparsity, if user-provided.
@@ -209,8 +205,7 @@ struct ipopt_nlp final : Ipopt::TNLP {
             // Convert into Index pairs.
             std::transform(merged_sp.begin(), merged_sp.end(), std::back_inserter(m_lag_sp),
                            [](const sparsity_pattern::value_type &p) {
-                               return std::make_pair(boost::numeric_cast<Index>(p.first),
-                                                     boost::numeric_cast<Index>(p.second));
+                               return std::make_pair(numeric_cast<Index>(p.first), numeric_cast<Index>(p.second));
                            });
         }
     }
@@ -236,16 +231,16 @@ struct ipopt_nlp final : Ipopt::TNLP {
         // signals to the Ipopt API that something went wrong.
         try {
             // Number of dimensions of the problem.
-            n = boost::numeric_cast<Index>(m_prob.get_nx());
+            n = numeric_cast<Index>(m_prob.get_nx());
 
             // Total number of constraints.
-            m = boost::numeric_cast<Index>(m_prob.get_nc());
+            m = numeric_cast<Index>(m_prob.get_nc());
 
             // Number of nonzero entries in the jacobian.
-            nnz_jac_g = boost::numeric_cast<Index>(m_jac_sp.size());
+            nnz_jac_g = numeric_cast<Index>(m_jac_sp.size());
 
             // Number of nonzero entries in the hessian of the lagrangian.
-            nnz_h_lag = boost::numeric_cast<Index>(m_lag_sp.size());
+            nnz_h_lag = numeric_cast<Index>(m_lag_sp.size());
 
             // We use C style indexing (0-based).
             index_style = TNLP::C_STYLE;
@@ -263,8 +258,8 @@ struct ipopt_nlp final : Ipopt::TNLP {
     bool get_bounds_info(Index n, Number *x_l, Number *x_u, Index m, Number *g_l, Number *g_u) final
     {
         try {
-            assert(n == boost::numeric_cast<Index>(m_prob.get_nx()));
-            assert(m == boost::numeric_cast<Index>(m_prob.get_nc()));
+            assert(n == numeric_cast<Index>(m_prob.get_nx()));
+            assert(m == numeric_cast<Index>(m_prob.get_nc()));
             (void)n;
 
             // Box bounds.
@@ -298,9 +293,9 @@ struct ipopt_nlp final : Ipopt::TNLP {
                             Number *) final
     {
         try {
-            assert(n == boost::numeric_cast<Index>(m_prob.get_nx()));
-            assert(n == boost::numeric_cast<Index>(m_start.size()));
-            assert(m == boost::numeric_cast<Index>(m_prob.get_nc()));
+            assert(n == numeric_cast<Index>(m_prob.get_nx()));
+            assert(n == numeric_cast<Index>(m_start.size()));
+            assert(m == numeric_cast<Index>(m_prob.get_nc()));
             (void)n;
             (void)m;
 
@@ -310,13 +305,13 @@ struct ipopt_nlp final : Ipopt::TNLP {
 
             // LCOV_EXCL_START
             if (init_z) {
-                pagmo_throw(std::runtime_error,
+                pagmo_throw(system_error,
                             "we are being asked to provide initial values for the bounds multiplier by "
                             "the Ipopt API, but in pagmo we do not support them");
             }
 
             if (init_lambda) {
-                pagmo_throw(std::runtime_error,
+                pagmo_throw(system_error,
                             "we are being asked to provide initial values for the constraints multiplier by "
                             "the Ipopt API, but in pagmo we do not support them");
             }
@@ -333,7 +328,7 @@ struct ipopt_nlp final : Ipopt::TNLP {
     bool eval_f(Index n, const Number *x, bool new_x, Number &obj_value) final
     {
         try {
-            assert(n == boost::numeric_cast<Index>(m_prob.get_nx()));
+            assert(n == numeric_cast<Index>(m_prob.get_nx()));
             // NOTE: the new_x boolean flag will be false if the last call to any of the eval_* function
             // used the same x value. Probably we can ignore this in favour of the upcoming caches work.
             (void)new_x;
@@ -360,11 +355,11 @@ struct ipopt_nlp final : Ipopt::TNLP {
 
                 if (!(m_objfun_counter / m_verbosity % 50u)) {
                     // Every 50 lines print the column names.
-                    print("\n", std::setw(10), "objevals:", std::setw(15), "objval:", std::setw(15),
+                    pagmo::print("\n", std::setw(10), "objevals:", std::setw(15), "objval:", std::setw(15),
                           "violated:", std::setw(15), "viol. norm:", '\n');
                 }
                 // Print to screen the log line.
-                print(std::setw(10), m_objfun_counter + 1u, std::setw(15), obj_value, std::setw(15), nv, std::setw(15),
+                pagmo::print(std::setw(10), m_objfun_counter + 1u, std::setw(15), obj_value, std::setw(15), nv, std::setw(15),
                       l, feas ? "" : " i", '\n');
                 // Record the log.
                 m_log.emplace_back(m_objfun_counter + 1u, obj_value, nv, l, feas);
@@ -384,7 +379,7 @@ struct ipopt_nlp final : Ipopt::TNLP {
     bool eval_grad_f(Index n, const Number *x, bool new_x, Number *grad_f) final
     {
         try {
-            assert(n == boost::numeric_cast<Index>(m_prob.get_nx()));
+            assert(n == numeric_cast<Index>(m_prob.get_nx()));
             (void)new_x;
 
             std::copy(x, x + n, m_dv.begin());
@@ -420,8 +415,8 @@ struct ipopt_nlp final : Ipopt::TNLP {
     bool eval_g(Index n, const Number *x, bool new_x, Index m, Number *g) final
     {
         try {
-            assert(n == boost::numeric_cast<Index>(m_prob.get_nx()));
-            assert(m == boost::numeric_cast<Index>(m_prob.get_nc()));
+            assert(n == numeric_cast<Index>(m_prob.get_nx()));
+            assert(m == numeric_cast<Index>(m_prob.get_nc()));
             (void)new_x;
 
             std::copy(x, x + n, m_dv.begin());
@@ -447,9 +442,9 @@ struct ipopt_nlp final : Ipopt::TNLP {
                     Number *values) final
     {
         try {
-            assert(n == boost::numeric_cast<Index>(m_prob.get_nx()));
-            assert(m == boost::numeric_cast<Index>(m_prob.get_nc()));
-            assert(nele_jac == boost::numeric_cast<Index>(m_jac_sp.size()));
+            assert(n == numeric_cast<Index>(m_prob.get_nx()));
+            assert(m == numeric_cast<Index>(m_prob.get_nc()));
+            assert(nele_jac == numeric_cast<Index>(m_jac_sp.size()));
             (void)new_x;
 
             if (values) {
@@ -481,9 +476,9 @@ struct ipopt_nlp final : Ipopt::TNLP {
                 Index nele_hess, Index *iRow, Index *jCol, Number *values) final
     {
         try {
-            assert(n == boost::numeric_cast<Index>(m_prob.get_nx()));
-            assert(m == boost::numeric_cast<Index>(m_prob.get_nc()));
-            assert(nele_hess == boost::numeric_cast<Index>(m_lag_sp.size()));
+            assert(n == numeric_cast<Index>(m_prob.get_nx()));
+            assert(m == numeric_cast<Index>(m_prob.get_nc()));
+            assert(nele_hess == numeric_cast<Index>(m_lag_sp.size()));
             (void)new_x;
             (void)new_lambda;
 
@@ -585,8 +580,8 @@ struct ipopt_nlp final : Ipopt::TNLP {
                            const Number *g, const Number *, Number obj_value, const IpoptData *,
                            IpoptCalculatedQuantities *) final
     {
-        assert(n == boost::numeric_cast<Index>(m_prob.get_nx()));
-        assert(m == boost::numeric_cast<Index>(m_prob.get_nc()));
+        assert(n == numeric_cast<Index>(m_prob.get_nx()));
+        assert(m == numeric_cast<Index>(m_prob.get_nc()));
 
         // Store the solution.
         std::copy(x, x + n, m_sol.begin());
@@ -664,7 +659,7 @@ template <typename Pair>
 void ipopt_opt_checker(bool status, const Pair &p, const std::string &op_type)
 {
     if (!status) {
-        pagmo_throw(std::invalid_argument, "failed to set the ipopt " + op_type + " option '" + p.first
+        pagmo_throw(invalid_parameter_error, "failed to set the ipopt " + op_type + " option '" + p.first
                                                + "' to the value: " + detail::to_string(p.second));
     }
 }
@@ -838,11 +833,11 @@ population ipopt::evolve(population pop) const
     const auto bounds = prob.get_bounds();
     for (decltype(bounds.first.size()) i = 0; i < bounds.first.size(); ++i) {
         if (std::isnan(initial_guess[i])) {
-            pagmo_throw(std::invalid_argument,
+            pagmo_throw(invalid_parameter_error,
                         "the value of the initial guess at index " + std::to_string(i) + " is NaN");
         }
         if (initial_guess[i] < bounds.first[i] || initial_guess[i] > bounds.second[i]) {
-            pagmo_throw(std::invalid_argument, "the value of the initial guess at index " + std::to_string(i)
+            pagmo_throw(invalid_parameter_error, "the value of the initial guess at index " + std::to_string(i)
                                                    + " is outside the problem's bounds");
         }
     }
@@ -901,7 +896,7 @@ population ipopt::evolve(population pop) const
     const Ipopt::ApplicationReturnStatus status = app->Initialize("");
     if (status != Ipopt::Solve_Succeeded) {
         // LCOV_EXCL_START
-        pagmo_throw(std::runtime_error, "the initialisation of the ipopt algorithm failed. The return status code is: "
+        pagmo_throw(system_error, "the initialisation of the ipopt algorithm failed. The return status code is: "
                                             + detail::ipopt_results.at(status));
         // LCOV_EXCL_STOP
     }
@@ -940,24 +935,16 @@ std::string ipopt::get_extra_info() const
 {
     return "\tLast optimisation return code: " + detail::ipopt_results.at(m_last_opt_res)
            + "\n\tVerbosity: " + std::to_string(m_verbosity) + "\n\tIndividual selection "
-           + (boost::any_cast<population::size_type>(&m_select)
-                  ? "idx: " + std::to_string(boost::any_cast<population::size_type>(m_select))
-                  : "policy: " + boost::any_cast<std::string>(m_select))
+           + (std::any_cast<population::size_type>(&m_select)
+                  ? "idx: " + std::to_string(std::any_cast<population::size_type>(m_select))
+                  : "policy: " + std::any_cast<std::string>(m_select))
            + "\n\tIndividual replacement "
-           + (boost::any_cast<population::size_type>(&m_replace)
-                  ? "idx: " + std::to_string(boost::any_cast<population::size_type>(m_replace))
-                  : "policy: " + boost::any_cast<std::string>(m_replace))
+           + (std::any_cast<population::size_type>(&m_replace)
+                  ? "idx: " + std::to_string(std::any_cast<population::size_type>(m_replace))
+                  : "policy: " + std::any_cast<std::string>(m_replace))
            + (m_string_opts.size() ? "\n\tString options: " + detail::to_string(m_string_opts) : "")
            + (m_integer_opts.size() ? "\n\tInteger options: " + detail::to_string(m_integer_opts) : "")
            + (m_numeric_opts.size() ? "\n\tNumeric options: " + detail::to_string(m_numeric_opts) : "") + "\n";
-}
-
-// Serialization.
-template <typename Archive>
-void ipopt::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, boost::serialization::base_object<not_population_based>(*this), m_string_opts, m_integer_opts,
-                    m_numeric_opts, m_last_opt_res, m_verbosity, m_log);
 }
 
 /// Set string option.

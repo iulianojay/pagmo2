@@ -18,6 +18,15 @@ project(pagmo VERSION 2.19.1 LANGUAGES CXX C)
 # Setup module path.
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" "${CMAKE_CURRENT_SOURCE_DIR}/cmake/yacma")
 
+# On Windows (MSVC multi-config), ensure ALL DLLs (pagmo + TBB + optional deps)
+# land in the same per-config directory so test executables can find them.
+# Using $<CONFIG> matches the per-config subdirectory that MSVC creates by default
+# (e.g. build/release/Release) so the PATH set in CI already covers all DLLs.
+# This must be set before CPM/subdirectory includes so it is inherited by all targets.
+if(WIN32)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIG>")
+endif()
+
 # Include CPM for modern dependency management
 include(cmake/CPM.cmake)
 
@@ -171,13 +180,24 @@ if (YACMA_COMPILER_IS_CLANGXX AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQU
         list(APPEND PAGMO_CXX_FLAGS_RELEASE "-fno-assume-unique-vtables")
     endif ()
     unset (_PAGMO_CLANG_SUPPORTS_ASSUME_UNIQUE_VTABLES)
+
+    list(APPEND PAGMO_CXX_FLAGS_DEBUG "-Wno-deprecated-declarations")
+    list(APPEND PAGMO_CXX_FLAGS_RELEASE "-Wno-deprecated-declarations")
 endif ()
+
+# retrieve a copy of the current directory's `COMPILE_OPTIONS`
+get_directory_property(old_compile_options COMPILE_OPTIONS)
+
+# silence external build warnings
+add_compile_options(-w)
 
 # TBB dependency
 include(cmake/find_or_build_tbb.cmake)
 
-# Boost dependency
-include(cmake/find_or_build_boost.cmake)
+# MPI dependency
+if(PAGMO_WITH_MPI)
+    include(cmake/find_or_build_mpi.cmake)
+endif()
 
 # Eigen3 dependency
 include(cmake/find_or_build_eigen.cmake)
@@ -188,19 +208,14 @@ include(cmake/find_or_build_nlopt.cmake)
 # IPOPT dependency
 include(cmake/find_or_build_ipopt.cmake)
 
-# MPI dependency
-if(PAGMO_WITH_MPI)
-    include(cmake/find_or_build_mpi.cmake)
-endif()
+# Cereal dependency (for serialization)
+include(cmake/find_or_build_cereal.cmake)
 
-if(PAGMO_BUILD_TESTS)
-    # Internal variable that will be used to tell PagmoFindBoost to locate the
-    # Boost unit test framework, if tests are required.
-    set(_PAGMO_FIND_BOOST_UNIT_TEST_FRAMEWORK TRUE)
-endif()
+# Graaf dependency (graph library, replaces Boost Graph Library)
+include(cmake/find_or_build_graaf.cmake)
 
-# Boost setup.
-include(cmake/find_or_build_boost.cmake)
+# Google Test dependency
+include(cmake/find_or_build_gtest.cmake)
 
 # List of source files.
 set(PAGMO_SRC_FILES
@@ -301,6 +316,8 @@ set(PAGMO_SRC_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/pagmo/detail/prime_numbers.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pagmo/detail/gte_getter.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pagmo/detail/type_name.cpp"
+    # Cereal type registrations (single authoritative TU, see s11n_registrations.cpp).
+    "${CMAKE_CURRENT_SOURCE_DIR}/pagmo/s11n_registrations.cpp"
 )
 
 # Optional and platform-dependent bits.
@@ -354,6 +371,9 @@ else()
     set_target_properties(pagmo PROPERTIES VISIBILITY_INLINES_HIDDEN TRUE)
 endif()
 
+# Namespaced alias for modern CMake consumers (target_link_libraries(... pagmo::pagmo))
+add_library(pagmo::pagmo ALIAS pagmo)
+
 # Ensure position-independent code for all configurations
 set_target_properties(pagmo PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
@@ -395,45 +415,41 @@ endif()
 # Threads.
 target_link_libraries(pagmo PUBLIC Threads::Threads)
 
-# Boost linking - use PRIVATE to avoid export issues
-if(TARGET boost_boost)
-    target_link_libraries(pagmo PRIVATE boost_boost)
-    # Also need to expose boost headers publicly for pagmo's public API
-    get_target_property(BOOST_INCLUDE_DIRS boost_boost INTERFACE_INCLUDE_DIRECTORIES)
-    if(BOOST_INCLUDE_DIRS)
-        target_include_directories(pagmo PUBLIC ${BOOST_INCLUDE_DIRS})
-    endif()
-    message(STATUS "Linked with boost_boost (private)")
-endif()
-
-# Link additional header-only boost libraries needed by pagmo
-foreach(boost_lib IN ITEMS boost_any boost_math boost_safe_numerics boost_bimap boost_system boost_graph boost_lexical_cast boost_integer boost_variant boost_variant2 boost_property_map boost_container boost_move boost_type_index boost_multi_index boost_type_traits boost_config boost_mpl boost_cat boost_preprocessor)
-    if(TARGET ${boost_lib})
-        target_link_libraries(pagmo PRIVATE ${boost_lib})
-        get_target_property(BOOST_LIB_INCLUDE_DIRS ${boost_lib} INTERFACE_INCLUDE_DIRECTORIES)
-        if(BOOST_LIB_INCLUDE_DIRS)
-            target_include_directories(pagmo PUBLIC ${BOOST_LIB_INCLUDE_DIRS})
-        endif()
-        message(STATUS "Linked with ${boost_lib} (private)")
-    endif()
-endforeach()
-
-target_link_libraries(pagmo PRIVATE boost_serialization)
-# Expose serialization headers publicly since pagmo's API uses them
-get_target_property(BOOST_SERIAL_INCLUDE_DIRS boost_serialization INTERFACE_INCLUDE_DIRECTORIES)
-if(BOOST_SERIAL_INCLUDE_DIRS)
-    target_include_directories(pagmo PUBLIC ${BOOST_SERIAL_INCLUDE_DIRS})
-endif()
-message(STATUS "Linked with boost_serialization (private)")
-
-# NOTE: quench warnings from Boost when building the library.
-target_compile_definitions(pagmo PRIVATE BOOST_ALLOW_DEPRECATED_HEADERS)
-
 # TBB.
 # NOTE: TBB is a private dependency because
 # all uses of TBB are limited to the .cpp files,
 # thus fully encapsulated in the pagmo library.
 target_link_libraries(pagmo PRIVATE pagmo_tbb_wrapper)
+# Silence warnings from TBB headers by treating them as system includes.
+get_target_property(_TBB_INCDIRS pagmo_tbb_wrapper INTERFACE_INCLUDE_DIRECTORIES)
+if(_TBB_INCDIRS)
+    target_include_directories(pagmo SYSTEM PRIVATE ${_TBB_INCDIRS})
+endif()
+unset(_TBB_INCDIRS)
+
+# Cereal serialization library for the main library
+if(TARGET cereal::cereal)
+    target_link_libraries(pagmo PRIVATE cereal::cereal)
+    message(STATUS "Linked with cereal::cereal (private)")
+    # Silence warnings from cereal headers by treating them as system includes.
+    get_target_property(_CEREAL_INCDIRS cereal::cereal INTERFACE_INCLUDE_DIRECTORIES)
+    if(_CEREAL_INCDIRS)
+        target_include_directories(pagmo SYSTEM PRIVATE ${_CEREAL_INCDIRS})
+    endif()
+    unset(_CEREAL_INCDIRS)
+elseif(TARGET cereal)
+    target_link_libraries(pagmo PRIVATE cereal)
+    message(STATUS "Linked with cereal (private)")
+    get_target_property(_CEREAL_INCDIRS cereal INTERFACE_INCLUDE_DIRECTORIES)
+    if(_CEREAL_INCDIRS)
+        target_include_directories(pagmo SYSTEM PRIVATE ${_CEREAL_INCDIRS})
+    endif()
+    unset(_CEREAL_INCDIRS)
+endif()
+
+# Link Graaf graph library (header-only, replaces Boost Graph Library).
+# Must be PUBLIC since graph_t is exposed in pagmo's public headers.
+target_link_libraries(pagmo PUBLIC Graaf::Graaf)
 
 if(PAGMO_WITH_EIGEN3)
     # Link pagmo to eigen3 privately and expose headers publicly
@@ -484,6 +500,9 @@ if(PAGMO_WITH_MPI)
     target_include_directories(pagmo PUBLIC ${MPI_CXX_INCLUDE_DIRS})
     set(PAGMO_ENABLE_MPI "#define PAGMO_WITH_MPI")
 endif()
+
+# restore the current directory's old `COMPILE_OPTIONS`
+set_directory_properties(PROPERTIES COMPILE_OPTIONS "${old_compile_options}")
 
 # Configure config.hpp.
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/config.hpp.in" "${CMAKE_CURRENT_BINARY_DIR}/include/pagmo/config.hpp" @ONLY)

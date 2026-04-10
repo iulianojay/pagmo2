@@ -56,22 +56,22 @@ xnes::xnes(unsigned gen, double eta_mu, double eta_sigma, double eta_b, double s
       m_xtol(xtol), m_memory(memory), m_force_bounds(force_bounds), m_e(seed), m_seed(seed), m_verbosity(0u), m_log()
 {
     if (((eta_mu <= 0.) || (eta_mu > 1.)) && !(eta_mu == -1)) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "eta_mu must be in ]0,1] or -1 if its value has to be initialized automatically, a value of "
                         + std::to_string(eta_mu) + " was detected");
     }
     if (((eta_sigma <= 0.) || (eta_sigma > 1.)) && !(eta_sigma == -1)) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "eta_sigma needs to be in ]0,1] or -1 if its value has to be initialized automatically, a value of "
                         + std::to_string(eta_sigma) + " was detected");
     }
     if (((eta_b <= 0.) || (eta_b > 1.)) && !(eta_b == -1)) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "eta_b needs to be in ]0,1] or -1 if its value has to be initialized automatically, a value of "
                         + std::to_string(eta_b) + " was detected");
     }
     if (((sigma0 <= 0.) || (sigma0 > 1.)) && !(sigma0 == -1)) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "sigma0 needs to be in ]0,1] or -1 if its value has to be initialized automatically, a value of "
                         + std::to_string(sigma0) + " was detected");
     }
@@ -110,26 +110,26 @@ population xnes::evolve(population pop) const
     // PREAMBLE--------------------------------------------------
     // Checks on the problem type
     if (prob.get_nc() != 0u) {
-        pagmo_throw(std::invalid_argument, "Non linear constraints detected in " + prob.get_name() + " instance. "
+        pagmo_throw(incompatible_problem_error, "Non linear constraints detected in " + prob.get_name() + " instance. "
                                                + get_name() + " cannot deal with them");
     }
     if (prob_f_dimension != 1u) {
-        pagmo_throw(std::invalid_argument, "Multiple objectives detected in " + prob.get_name() + " instance. "
+        pagmo_throw(incompatible_problem_error, "Multiple objectives detected in " + prob.get_name() + " instance. "
                                                + get_name() + " cannot deal with them");
     }
     if (lam < 4u) {
-        pagmo_throw(std::invalid_argument, get_name() + " needs at least 5 individuals in the population, "
+        pagmo_throw(insufficient_population_error, get_name() + " needs at least 5 individuals in the population, "
                                                + std::to_string(lam) + " detected");
     }
     for (auto num : lb) {
         if (!std::isfinite(num)) {
-            pagmo_throw(std::invalid_argument, "A " + std::to_string(num) + " is detected in the lower bounds, "
+            pagmo_throw(invalid_parameter_error, "A " + std::to_string(num) + " is detected in the lower bounds, "
                                                    + get_name() + " cannot deal with it.");
         }
     }
     for (auto num : ub) {
         if (!std::isfinite(num)) {
-            pagmo_throw(std::invalid_argument, "A " + std::to_string(num) + " is detected in the upper bounds, "
+            pagmo_throw(invalid_parameter_error, "A " + std::to_string(num) + " is detected in the upper bounds, "
                                                    + get_name() + " cannot deal with it.");
         }
     }
@@ -204,8 +204,8 @@ population xnes::evolve(population pop) const
 
     if (m_verbosity > 0u) {
         std::cout << "xNES 4 PaGMO: " << std::endl;
-        print("eta_mu: ", eta_mu, " - eta_sigma: ", eta_sigma, " - eta_b: ", eta_b, " - sigma0: ", sigma, "\n");
-        print("utilities: ", u, "\n");
+        pagmo::print("eta_mu: ", eta_mu, " - eta_sigma: ", eta_sigma, " - eta_b: ", eta_b, " - sigma0: ", sigma, "\n");
+        pagmo::print("utilities: ", u, "\n");
     }
 
     // ----------------------------------------------//
@@ -276,10 +276,10 @@ population xnes::evolve(population pop) const
                 auto df = std::abs(pop.get_f()[idx_b][0] - pop.get_f()[idx_w][0]);
                 // Every 50 lines print the column names
                 if (count % 50u == 1u) {
-                    print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
+                    pagmo::print("\n", std::setw(7), "Gen:", std::setw(15), "Fevals:", std::setw(15), "Best:", std::setw(15),
                           "dx:", std::setw(15), "df:", std::setw(15), "sigma:", '\n');
                 }
-                print(std::setw(7), gen, std::setw(15), prob.get_fevals() - fevals0, std::setw(15),
+                pagmo::print(std::setw(7), gen, std::setw(15), prob.get_fevals() - fevals0, std::setw(15),
                       pop.get_f()[idx_b][0], std::setw(15), dx, std::setw(15), df, std::setw(15), sigma, '\n');
                 ++count;
                 // Logs
@@ -367,14 +367,6 @@ std::string xnes::get_extra_info() const
     stream(ss, "\n\tVerbosity: ", m_verbosity);
     stream(ss, "\n\tSeed: ", m_seed);
     return ss.str();
-}
-
-// Object serialization
-template <typename Archive>
-void xnes::serialize(Archive &ar, unsigned)
-{
-    detail::archive(ar, m_gen, m_eta_mu, m_eta_sigma, m_eta_b, m_sigma0, m_ftol, m_xtol, m_memory, m_force_bounds,
-                    sigma, mean, A, m_e, m_seed, m_verbosity, m_log);
 }
 
 } // namespace pagmo

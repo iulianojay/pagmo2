@@ -31,17 +31,14 @@ see https://www.gnu.org/licenses/. */
 
 #include <concepts>
 #include <type_traits>
-
-#include <boost/numeric/conversion/cast.hpp>
-#include <boost/serialization/variant.hpp>
-#include <boost/variant/variant.hpp>
+#include <variant>
 
 #include <pagmo/concepts.hpp>
 #include <pagmo/detail/visibility.hpp>
 #include <pagmo/s11n.hpp>
 #include <pagmo/type_traits.hpp>
 #include <pagmo/types.hpp>
-
+#include <pagmo/utils/cast.hpp>
 namespace pagmo
 {
 
@@ -61,7 +58,7 @@ class PAGMO_DLL_PUBLIC base_sr_policy
     // Absolute migration rate.
     template <typename T>
         requires(std::is_integral_v<T>)
-    explicit base_sr_policy(ptag, T n) : m_migr_rate(boost::numeric_cast<pop_size_t>(n))
+    explicit base_sr_policy(ptag, T n) : m_migr_rate(numeric_cast<pop_size_t>(n))
     {
     }
     // Fractional migration rate.
@@ -81,19 +78,19 @@ public:
     }
 
 private:
-    friend class boost::serialization::access;
+    friend class cereal::access;
     // Serialization support.
     template <typename Archive>
-    void serialize(Archive &ar, unsigned)
+    void serialize(Archive &ar)
     {
         detail::archive(ar, m_migr_rate);
     }
 
 public:
-    const boost::variant<pop_size_t, double> &get_migr_rate() const;
+    const std::variant<pop_size_t, double> &get_migr_rate() const;
 
 protected:
-    boost::variant<pop_size_t, double> m_migr_rate;
+    std::variant<pop_size_t, double> m_migr_rate;
 };
 
 } // namespace detail

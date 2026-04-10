@@ -77,7 +77,7 @@ sparsity_pattern estimate_sparsity(Func f, const vector_double &x, double dx = 1
         auto f_new = f(x_new);
         if (f_new.size() != f0.size()) {
             pagmo_throw(
-                std::invalid_argument,
+                dimension_mismatch_error,
                 "Change in the size of the returned vector around the reference point. Cannot estimate a sparisty.");
         }
         for (decltype(f_new.size()) i = 0u; i < f_new.size(); ++i) {
@@ -142,8 +142,8 @@ vector_double estimate_gradient(Func f, const vector_double &x, double dx = 1e-8
         vector_double f_r = f(x_r);
         vector_double f_l = f(x_l);
         if (f_r.size() != f0.size() || f_l.size() != f0.size()) {
-            pagmo_throw(std::invalid_argument, "Change in the size of the returned vector detected around the "
-                                               "reference point. Cannot compute a gradient");
+            pagmo_throw(dimension_mismatch_error, "Change in the size of the returned vector detected around the "
+                                                  "reference point. Cannot compute a gradient");
         }
         for (decltype(f_r.size()) i = 0u; i < f_r.size(); ++i) {
             gradient[j + i * x.size()] = (f_r[i] - f_l[i]) / 2. / h;
@@ -221,8 +221,8 @@ vector_double estimate_gradient_h(Func f, const vector_double &x, double dx = 1e
         vector_double f_l3 = f(x_l3);
         if (f_r1.size() != f0.size() || f_l1.size() != f0.size() || f_r2.size() != f0.size() || f_l2.size() != f0.size()
             || f_r3.size() != f0.size() || f_l3.size() != f0.size()) {
-            pagmo_throw(std::invalid_argument, "Change in the size of the returned vector detected around the "
-                                               "reference point. Cannot compute a gradient");
+            pagmo_throw(dimension_mismatch_error, "Change in the size of the returned vector detected around the "
+                                                  "reference point. Cannot compute a gradient");
         }
         for (decltype(f_r1.size()) i = 0u; i < f_r1.size(); ++i) {
             double m1 = (f_r1[i] - f_l1[i]) / 2.;

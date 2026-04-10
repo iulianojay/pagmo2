@@ -122,9 +122,13 @@ struct PAGMO_DLL_PUBLIC minlp_rastrigin {
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned);
+    void serialize(Archive &ar)
+    {
+
+        detail::archive(ar, m_dim_c, m_dim_i);
+    }
 
     // Problem dimensions
     unsigned m_dim_c;

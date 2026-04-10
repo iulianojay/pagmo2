@@ -397,14 +397,36 @@ public:
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     // Save to archive.
     template <typename Archive>
-    void save(Archive &, unsigned) const;
+    void save(Archive &ar) const
+    {
+
+        detail::to_archive(ar, cereal::base_class<not_population_based>(this), m_algo, m_last_opt_result, m_sc_stopval,
+                           m_sc_ftol_rel, m_sc_ftol_abs, m_sc_xtol_rel, m_sc_xtol_abs, m_sc_maxeval, m_sc_maxtime,
+                           m_verbosity, m_log);
+        if (m_loc_opt) {
+            detail::to_archive(ar, true, *m_loc_opt);
+        } else {
+            ar(false);
+        }
+    }
     // Load from archive.
     template <typename Archive>
-    void load(Archive &, unsigned);
-    BOOST_SERIALIZATION_SPLIT_MEMBER()
+    void load(Archive &ar)
+    {
+
+        detail::from_archive(ar, cereal::base_class<not_population_based>(this), m_algo, m_last_opt_result, m_sc_stopval,
+                             m_sc_ftol_rel, m_sc_ftol_abs, m_sc_xtol_rel, m_sc_xtol_abs, m_sc_maxeval, m_sc_maxtime,
+                             m_verbosity, m_log);
+        bool with_local;
+        ar(with_local);
+        if (with_local) {
+            m_loc_opt = std::make_unique<nlopt>();
+            ar(*m_loc_opt);
+        }
+    }
 
     std::string m_algo;
     mutable ::nlopt_result m_last_opt_result = NLOPT_SUCCESS;

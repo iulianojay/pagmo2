@@ -87,9 +87,13 @@ struct PAGMO_DLL_PUBLIC griewank {
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned);
+    void serialize(Archive &ar)
+    {
+
+        ar & m_dim;
+    }
 };
 
 } // namespace pagmo

@@ -69,11 +69,11 @@ void bfe_check_input_dvs(const problem &p, const vector_double &dvs)
     // dvs represent a sequence of decision vectors laid out next to each other.
     // Hence, its size must be divided by the problem's dimension exactly.
     if (dvs.size() % n_dim) {
-        pagmo_throw(std::invalid_argument, "Invalid argument for a batch fitness evaluation: the length of the vector "
-                                           "representing the decision vectors, "
-                                               + std::to_string(dvs.size())
-                                               + ", is not an exact multiple of the dimension of the problem, "
-                                               + std::to_string(n_dim));
+        pagmo_throw(batch_eval_error, "Invalid argument for a batch fitness evaluation: the length of the vector "
+                                      "representing the decision vectors, "
+                                          + std::to_string(dvs.size())
+                                          + ", is not an exact multiple of the dimension of the problem, "
+                                          + std::to_string(n_dim));
     }
     // Check all the decision vectors, using the same function employed
     // in pagmo::problem for dv checking.
@@ -100,18 +100,17 @@ void bfe_check_output_fvs(const problem &p, const vector_double &dvs, const vect
     if (fvs.size() % f_dim) {
         // The size of the vector of fitnesses must be divided exactly
         // by the fitness dimension of the problem.
-        pagmo_throw(std::invalid_argument,
-                    "An invalid result was produced by a batch fitness evaluation: the length of "
-                    "the vector representing the fitness vectors, "
-                        + std::to_string(fvs.size())
-                        + ", is not an exact multiple of the fitness dimension of the problem, "
-                        + std::to_string(f_dim));
+        pagmo_throw(batch_eval_error, "An invalid result was produced by a batch fitness evaluation: the length of "
+                                      "the vector representing the fitness vectors, "
+                                          + std::to_string(fvs.size())
+                                          + ", is not an exact multiple of the fitness dimension of the problem, "
+                                          + std::to_string(f_dim));
     }
     if (n_fvs != n_dvs) {
         // The number of fitness vectors produced must be equal to the number of input
         // decision vectors.
         pagmo_throw(
-            std::invalid_argument,
+            batch_eval_error,
             "An invalid result was produced by a batch fitness evaluation: the number of produced fitness vectors, "
                 + std::to_string(n_fvs) + ", differs from the number of input decision vectors, "
                 + std::to_string(n_dvs));

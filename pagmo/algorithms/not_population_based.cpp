@@ -26,13 +26,12 @@ You should have received copies of the GNU General Public License and the
 GNU Lesser General Public License along with the PaGMO library.  If not,
 see https://www.gnu.org/licenses/. */
 
+#include <any>
 #include <cassert>
 #include <random>
 #include <stdexcept>
 #include <string>
 #include <utility>
-
-#include <boost/any.hpp>
 
 #include <pagmo/algorithms/not_population_based.hpp>
 #include <pagmo/exceptions.hpp>
@@ -88,7 +87,7 @@ void not_population_based::set_random_sr_seed(unsigned seed)
 void not_population_based::set_selection(const std::string &select)
 {
     if (select != "best" && select != "worst" && select != "random") {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "the individual selection policy must be one of ['best', 'worst', 'random'], but '" + select
                         + "' was provided instead");
     }
@@ -97,13 +96,13 @@ void not_population_based::set_selection(const std::string &select)
 
 /// Get the individual selection policy or index.
 /**
- * This method will return a \p boost::any containing either the individual selection policy (as an \p std::string)
+ * This method will return a \p std::any containing either the individual selection policy (as an \p std::string)
  * or the individual selection index (as a population::size_type). The selection policy or index is set via
  * set_selection(const std::string &) and set_selection(population::size_type).
  *
  * @return the individual selection policy or index.
  */
-boost::any not_population_based::get_selection() const
+std::any not_population_based::get_selection() const
 {
     return m_select;
 }
@@ -130,7 +129,7 @@ boost::any not_population_based::get_selection() const
 void not_population_based::set_replacement(const std::string &replace)
 {
     if (replace != "best" && replace != "worst" && replace != "random") {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_parameter_error,
                     "the individual replacement policy must be one of ['best', 'worst', 'random'], but '" + replace
                         + "' was provided instead");
     }
@@ -139,13 +138,13 @@ void not_population_based::set_replacement(const std::string &replace)
 
 /// Get the individual replacement policy or index.
 /**
- * This method will return a \p boost::any containing either the individual replacement policy (as an \p
+ * This method will return a \p std::any containing either the individual replacement policy (as an \p
  * std::string) or the individual replacement index (as a population::size_type). The replacement policy or index is
  * set via set_replacement(const std::string &) and set_replacement(population::size_type).
  *
  * @return the individual replacement policy or index.
  */
-boost::any not_population_based::get_replacement() const
+std::any not_population_based::get_replacement() const
 {
     return m_replace;
 }
@@ -178,8 +177,8 @@ boost::any not_population_based::get_replacement() const
 std::pair<vector_double, vector_double> not_population_based::select_individual(const population &pop) const
 {
     vector_double x, f;
-    if (boost::any_cast<std::string>(&m_select)) {
-        const auto &s_select = boost::any_cast<const std::string &>(m_select);
+    if (std::any_cast<std::string>(&m_select)) {
+        const auto &s_select = std::any_cast<const std::string &>(m_select);
         if (s_select == "best") {
             x = pop.get_x()[pop.best_idx()];
             f = pop.get_f()[pop.best_idx()];
@@ -194,9 +193,9 @@ std::pair<vector_double, vector_double> not_population_based::select_individual(
             f = pop.get_f()[idx];
         }
     } else {
-        const auto idx = boost::any_cast<population::size_type>(m_select);
+        const auto idx = std::any_cast<population::size_type>(m_select);
         if (idx >= pop.size()) {
-            pagmo_throw(std::invalid_argument, "cannot select the individual at index " + std::to_string(idx)
+            pagmo_throw(index_error, "cannot select the individual at index " + std::to_string(idx)
                                                    + ": the population has a size of only "
                                                    + std::to_string(pop.size()));
         }
@@ -231,8 +230,8 @@ std::pair<vector_double, vector_double> not_population_based::select_individual(
  */
 void not_population_based::replace_individual(population &pop, const vector_double &x, const vector_double &f) const
 {
-    if (boost::any_cast<std::string>(&m_replace)) {
-        const auto &s_replace = boost::any_cast<const std::string &>(m_replace);
+    if (std::any_cast<std::string>(&m_replace)) {
+        const auto &s_replace = std::any_cast<const std::string &>(m_replace);
         if (s_replace == "best") {
             pop.set_xf(pop.best_idx(), x, f);
         } else if (s_replace == "worst") {
@@ -243,9 +242,9 @@ void not_population_based::replace_individual(population &pop, const vector_doub
             pop.set_xf(dist(m_e), x, f);
         }
     } else {
-        const auto idx = boost::any_cast<population::size_type>(m_replace);
+        const auto idx = std::any_cast<population::size_type>(m_replace);
         if (idx >= pop.size()) {
-            pagmo_throw(std::invalid_argument, "cannot replace the individual at index " + std::to_string(idx)
+            pagmo_throw(index_error, "cannot replace the individual at index " + std::to_string(idx)
                                                    + ": the population has a size of only "
                                                    + std::to_string(pop.size()));
         }

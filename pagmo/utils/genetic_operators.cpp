@@ -253,29 +253,29 @@ std::pair<vector_double, vector_double> sbx_crossover(const vector_double &paren
     // the explicit tests needed.
     detail::check_problem_bounds(bounds, nix);
     if (parent1.size() != parent2.size()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(dimension_mismatch_error,
                     "The length of the chromosomes of the parents should be equal: parent1 length is "
                         + std::to_string(parent1.size()) + ", while parent2 length is "
                         + std::to_string(parent2.size()));
     }
     if (parent1.size() != bounds.first.size()) {
         pagmo_throw(
-            std::invalid_argument,
+            dimension_mismatch_error,
             "The length of the chromosomes of the parents should be the same as that of the bounds: parent1 length is "
                 + std::to_string(parent1.size()) + ", while the bounds length is "
                 + std::to_string(bounds.first.size()));
     }
     for (decltype(bounds.first.size()) i = 0u; i < bounds.first.size(); ++i) {
         if (!(std::isfinite(bounds.first[i]) && std::isfinite(bounds.second[i]))) {
-            pagmo_throw(std::invalid_argument, "Infinite value detected in the bounds at position: " + std::to_string(i)
-                                                   + ". Cannot perform Simulated Binary Crossover.");
+            pagmo_throw(invalid_value_error, "Infinite value detected in the bounds at position: " + std::to_string(i)
+                                                 + ". Cannot perform Simulated Binary Crossover.");
         }
     }
     if (!std::isfinite(p_cr)) {
-        pagmo_throw(std::invalid_argument, "Crossover probability is not finite, value is: " + std::to_string(p_cr));
+        pagmo_throw(invalid_value_error, "Crossover probability is not finite, value is: " + std::to_string(p_cr));
     }
     if (!std::isfinite(eta_c)) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_value_error,
                     "Crossover distribution index is not finite, value is: " + std::to_string(eta_c));
     }
     return detail::sbx_crossover_impl(parent1, parent2, bounds, nix, p_cr, eta_c, random_engine);
@@ -316,22 +316,22 @@ void polynomial_mutation(vector_double &dv, const std::pair<vector_double, vecto
 {
     detail::check_problem_bounds(bounds, nix);
     if (dv.size() != bounds.first.size()) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(dimension_mismatch_error,
                     "The length of the chromosome should be the same as that of the bounds: detected length is "
                         + std::to_string(dv.size()) + ", while the bounds length is "
                         + std::to_string(bounds.first.size()));
     }
     for (decltype(bounds.first.size()) i = 0u; i < bounds.first.size(); ++i) {
         if (!(std::isfinite(bounds.first[i]) && std::isfinite(bounds.second[i]))) {
-            pagmo_throw(std::invalid_argument, "Infinite value detected in the bounds at position: " + std::to_string(i)
-                                                   + ". Cannot perform Simulated Binary Crossover.");
+            pagmo_throw(invalid_value_error, "Infinite value detected in the bounds at position: " + std::to_string(i)
+                                                 + ". Cannot perform Simulated Binary Crossover.");
         }
     }
     if (!std::isfinite(p_m)) {
-        pagmo_throw(std::invalid_argument, "Mutation probability is not finite, value is: " + std::to_string(p_m));
+        pagmo_throw(invalid_value_error, "Mutation probability is not finite, value is: " + std::to_string(p_m));
     }
     if (!std::isfinite(eta_m)) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(invalid_value_error,
                     "Mutation distribution index is not finite, value is: " + std::to_string(eta_m));
     }
     return detail::polynomial_mutation_impl(dv, bounds, nix, p_m, eta_m, random_engine);

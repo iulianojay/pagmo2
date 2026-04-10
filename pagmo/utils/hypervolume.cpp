@@ -54,12 +54,12 @@ hypervolume::hypervolume() : m_points(), m_copy_points(true), m_verify(false) {}
 hypervolume::hypervolume(const pagmo::population &pop, bool verify) : m_copy_points(true), m_verify(verify)
 {
     if (pop.get_problem().get_nc() > 0u) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(incompatible_problem_error,
                     "The problem of the population is not unconstrained."
                     "Only unconstrained populations can be used to construct hypervolume objects.");
     }
     if (pop.get_problem().get_nobj() < 2u) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(incompatible_problem_error,
                     "The problem of the population is not multiobjective."
                     "Only multi-objective populations can be used to construct hypervolume objects.");
     }
@@ -245,7 +245,7 @@ double hypervolume::exclusive(unsigned p_idx, const vector_double &r_point, hv_a
     }
 
     if (p_idx >= m_points.size()) {
-        pagmo_throw(std::invalid_argument, "Index of the individual is out of bounds.");
+        pagmo_throw(index_error, "Index of the individual is out of bounds.");
     }
 
     // copy the initial set of points, as the algorithm may alter its contents
@@ -410,22 +410,22 @@ unsigned long long hypervolume::greatest_contributor(const vector_double &r_poin
 void hypervolume::verify_after_construct() const
 {
     if (m_points.size() == 0) {
-        pagmo_throw(std::invalid_argument, "Point set cannot be empty.");
+        pagmo_throw(empty_collection_error, "Point set cannot be empty.");
     }
     auto f_dim = m_points[0].size();
     if (f_dim <= 1) {
-        pagmo_throw(std::invalid_argument, "Points of dimension > 1 required.");
+        pagmo_throw(dimension_mismatch_error, "Points of dimension > 1 required.");
     }
     for (const auto &v : m_points) {
         if (v.size() != f_dim) {
-            pagmo_throw(std::invalid_argument, "All point set dimensions must be equal.");
+            pagmo_throw(dimension_mismatch_error, "All point set dimensions must be equal.");
         }
     }
     for (const auto &point : m_points) {
         for (auto value : point) {
             if (std::isnan(value)) {
-                pagmo_throw(std::invalid_argument, "A nan value has been encountered in the hypervolume points. Cannot "
-                                                   "construct the hypervolume object");
+                pagmo_throw(invalid_value_error, "A nan value has been encountered in the hypervolume points. Cannot "
+                                                 "construct the hypervolume object");
             }
         }
     }
@@ -443,7 +443,7 @@ void hypervolume::verify_after_construct() const
 void hypervolume::verify_before_compute(const vector_double &r_point, hv_algorithm &hv_algo) const
 {
     if (m_points[0].size() != r_point.size()) {
-        pagmo_throw(std::invalid_argument, "Point set dimensions and reference point dimension must be equal.");
+        pagmo_throw(dimension_mismatch_error, "Point set dimensions and reference point dimension must be equal.");
     }
     hv_algo.verify_before_compute(m_points, r_point);
 }

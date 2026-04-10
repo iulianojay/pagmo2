@@ -31,15 +31,13 @@ see https://www.gnu.org/licenses/. */
 #include <typeindex>
 #include <utility>
 
-#include <boost/numeric/conversion/cast.hpp>
-
 #include <pagmo/batch_evaluators/default_bfe.hpp>
 #include <pagmo/bfe.hpp>
 #include <pagmo/detail/bfe_impl.hpp>
 #include <pagmo/detail/type_name.hpp>
 #include <pagmo/problem.hpp>
 #include <pagmo/types.hpp>
-
+#include <pagmo/utils/cast.hpp>
 // MINGW-specific warnings.
 #if defined(__GNUC__) && defined(__MINGW32__)
 #pragma GCC diagnostic push
@@ -104,7 +102,7 @@ vector_double bfe::operator()(const problem &p, const vector_double &dvs) const
     // that the problem dimension exactly divides
     // dvs.size().
     const auto n_dvs = dvs.size() / p.get_nx();
-    p.increment_fevals(boost::numeric_cast<unsigned long long>(n_dvs));
+    p.increment_fevals(numeric_cast<unsigned long long>(n_dvs));
 
     return retval;
 }

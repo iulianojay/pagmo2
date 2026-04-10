@@ -216,9 +216,13 @@ public:
 
 private:
     // Object serialization
-    friend class boost::serialization::access;
+    friend class cereal::access;
     template <typename Archive>
-    void serialize(Archive &, unsigned);
+    void serialize(Archive &ar)
+    {
+
+        detail::archive(ar, m_gen, m_phmcr, m_ppar_min, m_ppar_max, m_bw_min, m_bw_max, m_e, m_seed, m_verbosity, m_log);
+    }
 
     // logging is complex fir ihs as the algorithm is an "any-problem" wannabe
     PAGMO_DLL_LOCAL void log_a_line(const population &, unsigned &, unsigned long long, double, double) const;

@@ -1,6 +1,11 @@
 function(ADD_PAGMO_BENCHMARK arg1)
     add_executable(${arg1} ${arg1}.cpp)
     target_link_libraries(${arg1} PRIVATE pagmo)
+    if(TARGET cereal::cereal)
+        target_link_libraries(${arg1} PRIVATE cereal::cereal)
+    elseif(TARGET cereal)
+        target_link_libraries(${arg1} PRIVATE cereal)
+    endif()
     target_compile_options(${arg1} PRIVATE
         "$<$<CONFIG:Debug>:${PAGMO_CXX_FLAGS_DEBUG}>"
         "$<$<CONFIG:Release>:${PAGMO_CXX_FLAGS_RELEASE}>"

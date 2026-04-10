@@ -320,7 +320,7 @@ std::vector<double> hv3d::contributions(std::vector<vector_double> &points, cons
 void hv3d::verify_before_compute(const std::vector<vector_double> &points, const vector_double &r_point) const
 {
     if (r_point.size() != 3u) {
-        pagmo_throw(std::invalid_argument, "Algorithm hv3d works only for 3-dimensional cases");
+        pagmo_throw(problem_config_error, "Algorithm hv3d works only for 3-dimensional cases");
     }
 
     hv_algorithm::assert_minimisation(points, r_point);

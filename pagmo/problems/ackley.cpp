@@ -45,7 +45,7 @@ namespace pagmo
 ackley::ackley(unsigned dim) : m_dim(dim)
 {
     if (dim < 1u) {
-        pagmo_throw(std::invalid_argument,
+        pagmo_throw(problem_config_error,
                     "Ackley Function must have minimum 1 dimension, " + std::to_string(dim) + " requested");
     }
 }
@@ -96,13 +96,6 @@ std::pair<vector_double, vector_double> ackley::get_bounds() const
 vector_double ackley::best_known() const
 {
     return vector_double(m_dim, 0.);
-}
-
-// Object serialization
-template <typename Archive>
-void ackley::serialize(Archive &ar, unsigned)
-{
-    ar & m_dim;
 }
 
 } // namespace pagmo
