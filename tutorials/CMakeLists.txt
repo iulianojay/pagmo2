@@ -26,3 +26,8 @@ ADD_PAGMO_TUTORIAL(nsga2_example)
 ADD_PAGMO_TUTORIAL(problem_basic)
 ADD_PAGMO_TUTORIAL(problem_basic_gh)
 ADD_PAGMO_TUTORIAL(problem_basic_s)
+
+if(PAGMO_WITH_MPI)
+    ADD_PAGMO_TUTORIAL(mpi_island_example)
+    ADD_PAGMO_TUTORIAL(mpi_archipelago_example)
+endif()

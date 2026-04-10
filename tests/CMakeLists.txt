@@ -163,3 +163,27 @@ endif()
 if(PAGMO_WITH_FORK_ISLAND)
     ADD_PAGMO_TESTCASE(islands/fork_island)
 endif()
+
+if (PAGMO_WITH_MPI)
+    ADD_PAGMO_TESTCASE(mpi_island)
+    target_link_libraries(test_mpi_island PRIVATE MPI::MPI_CXX)
+    # Configure MPI test to run with multiple processes if available
+    if(MPIEXEC_EXECUTABLE)
+        set_tests_properties(mpi_island PROPERTIES
+            RUN_SERIAL TRUE
+        )
+        # Optionally run with multiple processes (uncomment to enable)
+        # set_tests_properties(mpi_island PROPERTIES
+        #     PROCESSORS 4
+        # )
+        # set_property(TEST mpi_island PROPERTY
+        #     COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS}
+        #             $<TARGET_FILE:test_mpi_island> ${MPIEXEC_POSTFLAGS}
+        # )
+    else()
+        # Run with single process if mpiexec not found
+        set_tests_properties(mpi_island PROPERTIES
+            RUN_SERIAL TRUE
+        )
+    endif()
+endif()

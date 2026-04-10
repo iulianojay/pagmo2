@@ -6,7 +6,7 @@
 # Scientific library for massively parallel optimization
 
 # Build configuration
-BUILD_TYPE ?= Release
+CMAKE ?= $(shell which cmake)
 BUILD_DIR = build/$(shell echo $(BUILD_TYPE) | tr '[:upper:]' '[:lower:]')
 
 # Build-type shortcut targets (debug, release, relwithdebinfo, minsizerel)
@@ -32,6 +32,7 @@ PAGMO_BUILD_TUTORIALS ?= OFF
 PAGMO_WITH_EIGEN3 ?= OFF
 PAGMO_WITH_NLOPT ?= OFF
 PAGMO_WITH_IPOPT ?= OFF
+PAGMO_WITH_MPI ?= OFF
 PAGMO_ENABLE_IPO ?= OFF
 PAGMO_BUILD_STATIC_LIBRARY ?= OFF
 
@@ -45,6 +46,7 @@ CMAKE_FLAGS = -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) \
               -DPAGMO_WITH_EIGEN3=$(PAGMO_WITH_EIGEN3) \
               -DPAGMO_WITH_NLOPT=$(PAGMO_WITH_NLOPT) \
               -DPAGMO_WITH_IPOPT=$(PAGMO_WITH_IPOPT) \
+              -DPAGMO_WITH_MPI=$(PAGMO_WITH_MPI) \
               -DPAGMO_ENABLE_IPO=$(PAGMO_ENABLE_IPO) \
               -DPAGMO_BUILD_STATIC_LIBRARY=$(PAGMO_BUILD_STATIC_LIBRARY)
 
@@ -86,6 +88,7 @@ help:
 	@echo "  PAGMO_WITH_EIGEN3       - Enable Eigen3 support (default: $(PAGMO_WITH_EIGEN3))"
 	@echo "  PAGMO_WITH_NLOPT        - Enable NLopt support (default: $(PAGMO_WITH_NLOPT))"
 	@echo "  PAGMO_WITH_IPOPT        - Enable Ipopt support (default: $(PAGMO_WITH_IPOPT))"
+	@echo "  PAGMO_WITH_MPI          - Enable MPI (default: $(PAGMO_WITH_MPI))"
 	@echo "  PAGMO_ENABLE_IPO        - Enable IPO optimization (default: $(PAGMO_ENABLE_IPO))"
 	@echo "  PAGMO_BUILD_STATIC_LIBRARY - Build static library (default: $(PAGMO_BUILD_STATIC_LIBRARY))"
 	@echo ""
@@ -287,8 +290,14 @@ full-build:
 		PAGMO_BUILD_TUTORIALS=ON \
 		PAGMO_WITH_EIGEN3=ON \
 		PAGMO_WITH_NLOPT=ON \
+		PAGMO_WITH_MPI=ON \
 		PAGMO_ENABLE_IPO=ON
 	@$(MAKE) -C $(BUILD_DIR) -j$(NUM_JOBS) --no-print-directory 
+
+.PHONY: mpi
+mpi:
+	@echo "==> Building with MPI..."
+	@$(MAKE) build PAGMO_WITH_MPI=ON
 
 # Status and info targets
 .PHONY: status
