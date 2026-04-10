@@ -33,6 +33,16 @@ function(ADD_PAGMO_TESTCASE arg1)
     target_compile_definitions(test_${_test_name} PRIVATE "_PAGMO_TEST_ROOT_=\"${CMAKE_CURRENT_LIST_DIR}\"")
     set_property(TARGET test_${_test_name} PROPERTY CXX_EXTENSIONS NO)
     set_property(TARGET test_${_test_name} PROPERTY UNITY_BUILD OFF)
+    # On macOS, cereal's StaticObject<> singletons would otherwise be duplicated: one copy
+    # lives in libpagmo.dylib and another in each test executable (two-level namespace).
+    # Polymorphic type registrations that happen in the test exe (e.g. local test types
+    # registered via PAGMO_S11N_*_EXPORT) would end up in the test exe's copy and be
+    # invisible to the archive code running inside libpagmo.
+    # -Wl,-flat_namespace makes the dynamic linker use a single global symbol table, so
+    # all StaticObject accesses resolve to the same (libpagmo-owned) singletons.
+    if(APPLE AND NOT PAGMO_BUILD_STATIC_LIBRARY)
+        target_link_options(test_${_test_name} PRIVATE -Wl,-flat_namespace)
+    endif()
     add_test(NAME ${_test_name} COMMAND test_${_test_name})
 endfunction()
 

@@ -39,6 +39,13 @@ see https://www.gnu.org/licenses/. */
 #include <pagmo/config.hpp>
 #include <pagmo/s11n.hpp>
 
+// On macOS, cereal's StaticObject<> singletons would otherwise be duplicated: one
+// copy in libpagmo.dylib and one in each test executable (two-level namespace).
+// The fix is applied in tests/CMakeLists.txt: test executables are linked with
+// -Wl,-flat_namespace so that all StaticObject accesses resolve to the same
+// (libpagmo-owned) singletons.  CEREAL_REGISTER_DYNAMIC_INIT below ensures that
+// this TU is not dead-stripped on macOS.
+
 // ---- Problems ---------------------------------------------------------------
 #include <pagmo/problems/ackley.hpp>
 #include <pagmo/problems/cec2006.hpp>
