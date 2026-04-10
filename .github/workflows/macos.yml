@@ -50,22 +50,6 @@ jobs:
       - name: Test
         run: make CMAKE=cmake NUM_JOBS=$(sysctl -n hw.ncpu) BUILD_TYPE=Release test
 
-  macos-ipopt:
-    name: macOS - With Ipopt
-    runs-on: macos-latest
-    needs: macos-no-deps
-    steps:
-      - uses: actions/checkout@v4
-      - name: Install ipopt build dependencies
-        run: brew install gcc
-      - name: Build
-        env:
-          CC: clang
-          CXX: clang++
-        run: make CMAKE=cmake NUM_JOBS=$(sysctl -n hw.ncpu) BUILD_TYPE=Release PAGMO_BUILD_TESTS=ON PAGMO_WITH_IPOPT=ON build
-      - name: Test
-        run: make CMAKE=cmake NUM_JOBS=$(sysctl -n hw.ncpu) BUILD_TYPE=Release test
-
   macos-all-deps:
     name: macOS - All Dependencies
     runs-on: macos-latest

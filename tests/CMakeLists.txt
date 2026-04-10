@@ -10,7 +10,7 @@ function(ADD_PAGMO_TESTCASE arg1)
     endif()
     get_filename_component(_test_name "${arg1}" NAME)
     # Add 'test_' prefix to avoid conflicts with library targets
-    add_executable(test_${_test_name} ${arg1}.test.cpp)
+    add_executable(test_${_test_name} ${arg1}.test.cpp "${CMAKE_CURRENT_SOURCE_DIR}/pagmo_force_dynamic_init.cpp")
     if(TARGET gtest_main)
         target_link_libraries(test_${_test_name} PRIVATE pagmo gtest_main gtest)
         # Add cereal for tests that include headers with cereal

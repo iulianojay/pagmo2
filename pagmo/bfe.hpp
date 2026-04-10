@@ -52,11 +52,27 @@ see https://www.gnu.org/licenses/. */
 #include <pagmo/type_traits.hpp>
 #include <pagmo/types.hpp>
 
+// Declares the compile-time cereal name binding and polymorphic caster relation.
+// Safe to place in headers — creates no static initializer objects.
 #define PAGMO_S11N_BFE_EXPORT_KEY(b)                                                                                   \
-    CEREAL_REGISTER_TYPE(pagmo::detail::bfe_inner<b>)                                                                  \
+    namespace cereal                                                                                                   \
+    {                                                                                                                  \
+    namespace detail                                                                                                   \
+    {                                                                                                                  \
+    template <>                                                                                                        \
+    struct binding_name<pagmo::detail::bfe_inner<b>> {                                                                 \
+        static constexpr char const *name()                                                                            \
+        {                                                                                                              \
+            return "pagmo::detail::bfe_inner<" #b ">";                                                                 \
+        }                                                                                                              \
+    };                                                                                                                 \
+    }                                                                                                                  \
+    } /* end namespaces */                                                                                             \
     CEREAL_REGISTER_POLYMORPHIC_RELATION(pagmo::detail::bfe_inner_base, pagmo::detail::bfe_inner<b>)
 
-#define PAGMO_S11N_BFE_IMPLEMENT(b)
+// Creates the static registration initializer. Must be used in ONE .cpp only
+// (pagmo/s11n_registrations.cpp) to avoid duplicate StaticObject singletons on macOS.
+#define PAGMO_S11N_BFE_IMPLEMENT(b) CEREAL_BIND_TO_ARCHIVES(pagmo::detail::bfe_inner<b>)
 
 #define PAGMO_S11N_BFE_EXPORT(b)                                                                                       \
     PAGMO_S11N_BFE_EXPORT_KEY(b)                                                                                       \

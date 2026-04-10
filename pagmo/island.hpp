@@ -64,11 +64,27 @@ see https://www.gnu.org/licenses/. */
 #include <pagmo/type_traits.hpp>
 #include <pagmo/types.hpp>
 
+// Declares the compile-time cereal name binding and polymorphic caster relation.
+// Safe to place in headers — creates no static initializer objects.
 #define PAGMO_S11N_ISLAND_EXPORT_KEY(isl)                                                                              \
-    CEREAL_REGISTER_TYPE(pagmo::detail::isl_inner<isl>)                                                                \
+    namespace cereal                                                                                                   \
+    {                                                                                                                  \
+    namespace detail                                                                                                   \
+    {                                                                                                                  \
+    template <>                                                                                                        \
+    struct binding_name<pagmo::detail::isl_inner<isl>> {                                                               \
+        static constexpr char const *name()                                                                            \
+        {                                                                                                              \
+            return "pagmo::detail::isl_inner<" #isl ">";                                                               \
+        }                                                                                                              \
+    };                                                                                                                 \
+    }                                                                                                                  \
+    } /* end namespaces */                                                                                             \
     CEREAL_REGISTER_POLYMORPHIC_RELATION(pagmo::detail::isl_inner_base, pagmo::detail::isl_inner<isl>)
 
-#define PAGMO_S11N_ISLAND_IMPLEMENT(isl)
+// Creates the static registration initializer. Must be used in ONE .cpp only
+// (pagmo/s11n_registrations.cpp) to avoid duplicate StaticObject singletons on macOS.
+#define PAGMO_S11N_ISLAND_IMPLEMENT(isl) CEREAL_BIND_TO_ARCHIVES(pagmo::detail::isl_inner<isl>)
 
 #define PAGMO_S11N_ISLAND_EXPORT(isl)                                                                                  \
     PAGMO_S11N_ISLAND_EXPORT_KEY(isl)                                                                                  \

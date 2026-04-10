@@ -54,11 +54,27 @@ see https://www.gnu.org/licenses/. */
 #include <pagmo/type_traits.hpp>
 #include <pagmo/types.hpp>
 
+// Declares the compile-time cereal name binding and polymorphic caster relation.
+// Safe to place in headers — creates no static initializer objects.
 #define PAGMO_S11N_TOPOLOGY_EXPORT_KEY(topo)                                                                           \
-    CEREAL_REGISTER_TYPE(pagmo::detail::topo_inner<topo>)                                                              \
+    namespace cereal                                                                                                   \
+    {                                                                                                                  \
+    namespace detail                                                                                                   \
+    {                                                                                                                  \
+    template <>                                                                                                        \
+    struct binding_name<pagmo::detail::topo_inner<topo>> {                                                             \
+        static constexpr char const *name()                                                                            \
+        {                                                                                                              \
+            return "pagmo::detail::topo_inner<" #topo ">";                                                             \
+        }                                                                                                              \
+    };                                                                                                                 \
+    }                                                                                                                  \
+    } /* end namespaces */                                                                                             \
     CEREAL_REGISTER_POLYMORPHIC_RELATION(pagmo::detail::topo_inner_base, pagmo::detail::topo_inner<topo>)
 
-#define PAGMO_S11N_TOPOLOGY_IMPLEMENT(topo)
+// Creates the static registration initializer. Must be used in ONE .cpp only
+// (pagmo/s11n_registrations.cpp) to avoid duplicate StaticObject singletons on macOS.
+#define PAGMO_S11N_TOPOLOGY_IMPLEMENT(topo) CEREAL_BIND_TO_ARCHIVES(pagmo::detail::topo_inner<topo>)
 
 #define PAGMO_S11N_TOPOLOGY_EXPORT(topo)                                                                               \
     PAGMO_S11N_TOPOLOGY_EXPORT_KEY(topo)                                                                               \

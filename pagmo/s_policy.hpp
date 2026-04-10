@@ -50,11 +50,27 @@ see https://www.gnu.org/licenses/. */
 #include <pagmo/type_traits.hpp>
 #include <pagmo/types.hpp>
 
+// Declares the compile-time cereal name binding and polymorphic caster relation.
+// Safe to place in headers — creates no static initializer objects.
 #define PAGMO_S11N_S_POLICY_EXPORT_KEY(s)                                                                              \
-    CEREAL_REGISTER_TYPE(pagmo::detail::s_pol_inner<s>)                                                                \
+    namespace cereal                                                                                                   \
+    {                                                                                                                  \
+    namespace detail                                                                                                   \
+    {                                                                                                                  \
+    template <>                                                                                                        \
+    struct binding_name<pagmo::detail::s_pol_inner<s>> {                                                               \
+        static constexpr char const *name()                                                                            \
+        {                                                                                                              \
+            return "pagmo::detail::s_pol_inner<" #s ">";                                                               \
+        }                                                                                                              \
+    };                                                                                                                 \
+    }                                                                                                                  \
+    } /* end namespaces */                                                                                             \
     CEREAL_REGISTER_POLYMORPHIC_RELATION(pagmo::detail::s_pol_inner_base, pagmo::detail::s_pol_inner<s>)
 
-#define PAGMO_S11N_S_POLICY_IMPLEMENT(s)
+// Creates the static registration initializer. Must be used in ONE .cpp only
+// (pagmo/s11n_registrations.cpp) to avoid duplicate StaticObject singletons on macOS.
+#define PAGMO_S11N_S_POLICY_IMPLEMENT(s) CEREAL_BIND_TO_ARCHIVES(pagmo::detail::s_pol_inner<s>)
 
 #define PAGMO_S11N_S_POLICY_EXPORT(s)                                                                                  \
     PAGMO_S11N_S_POLICY_EXPORT_KEY(s)                                                                                  \

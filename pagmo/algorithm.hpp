@@ -51,11 +51,27 @@ see https://www.gnu.org/licenses/. */
 #include <pagmo/threading.hpp>
 #include <pagmo/type_traits.hpp>
 
+// Declares the compile-time cereal name binding and polymorphic caster relation.
+// Safe to place in headers — creates no static initializer objects.
 #define PAGMO_S11N_ALGORITHM_EXPORT_KEY(algo)                                                                          \
-    CEREAL_REGISTER_TYPE(pagmo::detail::algo_inner<algo>)                                                              \
+    namespace cereal                                                                                                   \
+    {                                                                                                                  \
+    namespace detail                                                                                                   \
+    {                                                                                                                  \
+    template <>                                                                                                        \
+    struct binding_name<pagmo::detail::algo_inner<algo>> {                                                             \
+        static constexpr char const *name()                                                                            \
+        {                                                                                                              \
+            return "pagmo::detail::algo_inner<" #algo ">";                                                             \
+        }                                                                                                              \
+    };                                                                                                                 \
+    }                                                                                                                  \
+    } /* end namespaces */                                                                                             \
     CEREAL_REGISTER_POLYMORPHIC_RELATION(pagmo::detail::algo_inner_base, pagmo::detail::algo_inner<algo>)
 
-#define PAGMO_S11N_ALGORITHM_IMPLEMENT(algo)
+// Creates the static registration initializer. Must be used in ONE .cpp only
+// (pagmo/s11n_registrations.cpp) to avoid duplicate StaticObject singletons on macOS.
+#define PAGMO_S11N_ALGORITHM_IMPLEMENT(algo) CEREAL_BIND_TO_ARCHIVES(pagmo::detail::algo_inner<algo>)
 
 #define PAGMO_S11N_ALGORITHM_EXPORT(algo)                                                                              \
     PAGMO_S11N_ALGORITHM_EXPORT_KEY(algo)                                                                              \

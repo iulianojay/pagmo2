@@ -308,6 +308,8 @@ set(PAGMO_SRC_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/pagmo/detail/prime_numbers.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pagmo/detail/gte_getter.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pagmo/detail/type_name.cpp"
+    # Cereal type registrations (single authoritative TU, see s11n_registrations.cpp).
+    "${CMAKE_CURRENT_SOURCE_DIR}/pagmo/s11n_registrations.cpp"
 )
 
 # Optional and platform-dependent bits.
