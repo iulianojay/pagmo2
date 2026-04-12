@@ -1,39 +1,9 @@
-#include <any>
 #include <cassert>
-#include <concepts>
-#include <functional>
 #include <iostream>
-#include <meta>
-#include <string>
-#include <type_traits>
 
-template <typename E>
-    requires std::is_enum_v<E>
-constexpr std::string enum_to_string(E value)
-{
-    std::string result = "<unnamed>";
-    template for (constexpr auto e : std::define_static_array(std::meta::enumerators_of(^^E)))
-    {
-        if (value == [:e:]) {
-            result = std::meta::identifier_of(e);
-        }
-    }
-    return result;
-}
+#include <pagmo/reflection.hpp>
 
-template <typename E>
-    requires std::is_enum_v<E>
-constexpr std::optional<E> string_to_enum(std::string_view name)
-{
-    template for (constexpr auto e : std::define_static_array(std::meta::enumerators_of(^^E)))
-    {
-        if (name == std::meta::identifier_of(e)) {
-            return [:e:];
-        }
-    }
-
-    return std::nullopt;
-}
+using namespace pagmo::detail;
 
 enum Color { red, green, blue };
 
@@ -96,75 +66,6 @@ struct B {
         return 3.0;
     }
 };
-
-// fixed_string is structural (all-public), usable as an NTTP.
-template <std::size_t N>
-struct fixed_string {
-    char data[N]{};
-    constexpr fixed_string(const char (&s)[N])
-    {
-        std::copy_n(s, N, data);
-    }
-    constexpr operator std::string_view() const
-    {
-        return {data, N - 1};
-    }
-};
-template <std::size_t N>
-fixed_string(const char (&)[N]) -> fixed_string<N>;
-
-template <fixed_string name, typename T>
-consteval bool has_member_named()
-{
-    for (auto m : std::meta::members_of(^^T, std::meta::access_context::current())) {
-        if (std::meta::is_function(m) && std::meta::has_identifier(m)
-            && std::meta::identifier_of(m) == std::string_view(name))
-            return true;
-    }
-    return false;
-}
-
-template <fixed_string name, typename T>
-constexpr auto reflect_function_impl(T &t)
-{
-    template for (constexpr auto m :
-                  std::define_static_array(std::meta::members_of(^^T, std::meta::access_context::current())))
-    {
-        if constexpr (std::meta::is_function(m) && std::meta::has_identifier(m)
-                      && std::meta::identifier_of(m) == std::string_view(name)) {
-            return [&t]() mutable { return t.[:m:](); };
-        }
-    }
-}
-
-template <fixed_string name, typename T>
-constexpr auto reflect_function_impl(T &&t)
-{
-    template for (constexpr auto m :
-                  std::define_static_array(std::meta::members_of(^^T, std::meta::access_context::current())))
-    {
-        if constexpr (std::meta::is_function(m) && std::meta::has_identifier(m)
-                      && std::meta::identifier_of(m) == std::string_view(name)) {
-            return [t]() mutable { return t.[:m:](); };
-        }
-    }
-}
-
-template <typename Default_T, fixed_string name, typename T>
-constexpr auto reflect_function(T &t)
-{
-    if constexpr (has_member_named<name, T>()) {
-        return reflect_function_impl<name>(t);
-    } else {
-        return reflect_function_impl<name>(Default_T{}); // Fallback to default type if member not found in T
-    }
-}
-
-template <typename Default_T, fixed_string... names, typename T>
-constexpr auto reflect_functions(T &t)
-{
-    return std::tuple{reflect_function<Default_T, names>(t)...};
-}
 
 struct DefaultAnyFoo {
     int counter_value() const

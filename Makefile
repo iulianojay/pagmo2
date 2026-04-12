@@ -360,4 +360,4 @@ reflection-test: reflection_test
 	./reflection_test
 
 reflection_test: reflection_test.cpp
-	$(GCC16) -std=c++26 -freflection -o reflection_test reflection_test.cpp
+	$(GCC16) -std=c++26 -freflection -o reflection_test reflection_test.cpp -I.
