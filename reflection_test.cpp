@@ -1,5 +1,9 @@
 #include <cassert>
 #include <iostream>
+#include <sstream>
+
+#include <cereal/archives/binary.hpp>
+#include <cereal/archives/json.hpp>
 
 #include <pagmo/reflection.hpp>
 
@@ -52,6 +56,12 @@ struct A {
         return counter;
     }
 
+    template <class Archive>
+    void serialize(Archive &ar)
+    {
+        ar(CEREAL_NVP(counter));
+    }
+
 private:
     int counter = 0;
 };
@@ -72,39 +82,103 @@ struct DefaultAnyFoo {
     {
         return -1;
     }
+
+private:
+    friend class cereal::access;
+    template <class Archive>
+    void serialize(Archive &)
+    {
+    }
 };
+
+// External serialization dispatcher: calls T::serialize if present,
+// otherwise falls back to DefaultAnyFoo::serialize (a no-op).
+// New archive types are supported just by adding overloads or using
+// this template directly.
+template <typename Default_T, typename T, typename Archive>
+void serialize(T &t, Archive &ar)
+{
+    if constexpr (has_function_template_named<"serialize", T>()) {
+        ar(t);
+    } else {
+        Default_T fallback{};
+        ar(fallback);
+    }
+}
 
 // Type-erased container built with reflection.
 // Stores any type that has foo()->int and bar()->int,
 // wiring them up automatically by name rather than via virtual dispatch.
+// Serialization is forwarded through serialize_any_foo_bar; one
+// std::function is captured per supported archive type at construction.
 struct AnyFooBar {
     template <typename T>
-    constexpr AnyFooBar(T &t)
+    explicit AnyFooBar(T &t)
     {
-        std::tie(foo_, bar_, counter_value_) = reflect_functions<DefaultAnyFoo, "foo", "bar", "counter_value">(t);
+        std::tie(m_foo, m_bar, m_counter_value) = reflect_functions<DefaultAnyFoo, "foo", "bar", "counter_value">(t);
+
+        m_save_json = [&t](cereal::JSONOutputArchive &ar) { serialize<DefaultAnyFoo>(t, ar); };
+        m_save_bin = [&t](cereal::BinaryOutputArchive &ar) { serialize<DefaultAnyFoo>(t, ar); };
+        m_load_json = [&t](cereal::JSONInputArchive &ar) { serialize<DefaultAnyFoo>(t, ar); };
+        m_load_bin = [&t](cereal::BinaryInputArchive &ar) { serialize<DefaultAnyFoo>(t, ar); };
     }
 
     int foo()
     {
-        return foo_();
+        return m_foo();
     }
     double bar()
     {
-        return bar_();
+        return m_bar();
     }
     int counter_value() const
     {
-        return counter_value_();
+        return m_counter_value();
     }
 
 private:
-    std::function<int()> foo_;
-    std::function<double()> bar_;
-    std::function<int()> counter_value_;
+    std::function<int()> m_foo;
+    std::function<double()> m_bar;
+    std::function<int()> m_counter_value;
 
-    static int default_counter_value()
+    std::function<void(cereal::JSONOutputArchive &)> m_save_json;
+    std::function<void(cereal::JSONInputArchive &)> m_load_json;
+    std::function<void(cereal::BinaryOutputArchive &)> m_save_bin;
+    std::function<void(cereal::BinaryInputArchive &)> m_load_bin;
+
+    friend class cereal::access;
+    friend int serialization_test();
+
+    template <typename Archive>
+    void save(Archive &ar)
     {
-        return -1; // Indicates no counter_value() function was found
+        if constexpr (std::derived_from<Archive, cereal::JSONOutputArchive>) {
+            m_save_json(ar);
+        } else if constexpr (std::derived_from<Archive, cereal::JSONInputArchive>) {
+            m_load_json(ar);
+        } else if constexpr (std::derived_from<Archive, cereal::BinaryOutputArchive>) {
+            m_save_bin(ar);
+        } else if constexpr (std::derived_from<Archive, cereal::BinaryInputArchive>) {
+            m_load_bin(ar);
+        } else {
+            static_assert(false, "Unsupported archive type");
+        }
+    }
+
+    template <typename Archive>
+    void load(Archive &ar)
+    {
+        if constexpr (std::derived_from<Archive, cereal::JSONOutputArchive>) {
+            m_save_json(ar);
+        } else if constexpr (std::derived_from<Archive, cereal::JSONInputArchive>) {
+            m_load_json(ar);
+        } else if constexpr (std::derived_from<Archive, cereal::BinaryOutputArchive>) {
+            m_save_bin(ar);
+        } else if constexpr (std::derived_from<Archive, cereal::BinaryInputArchive>) {
+            m_load_bin(ar);
+        } else {
+            static_assert(false, "Unsupported archive type");
+        }
     }
 };
 
@@ -136,6 +210,79 @@ int function_pack()
     return 0;
 }
 
+int serialization_test()
+{
+    // --- JSON: A has serialize, counter state should round-trip ---
+    A a_instance;
+    AnyFooBar a{a_instance};
+    a.foo(); // counter -> 1
+    a.foo(); // counter -> 2
+    a.bar(); // counter -> 3
+    assert(a.counter_value() == 3);
+
+    std::string saved_json;
+    {
+        std::ostringstream ss;
+        {
+            cereal::JSONOutputArchive ar(ss);
+            a.save(ar);
+        }
+        saved_json = ss.str();
+    }
+    std::cout << "A saved JSON: " << saved_json << '\n';
+
+    A a_fresh;
+    AnyFooBar a2{a_fresh};
+    assert(a2.counter_value() == 0);
+    {
+        std::istringstream ss(saved_json);
+        cereal::JSONInputArchive ar(ss);
+        a2.load(ar);
+    }
+    assert(a2.counter_value() == 3);
+    std::cout << "A JSON round-trip passed: counter_value = " << a2.counter_value() << '\n';
+
+    // --- Binary: same object, different archive type ---
+    std::string saved_bin;
+    {
+        std::ostringstream ss;
+        {
+            cereal::BinaryOutputArchive ar(ss);
+            a.save(ar);
+        }
+        saved_bin = ss.str();
+    }
+
+    A a_fresh2;
+    AnyFooBar a3{a_fresh2};
+    assert(a3.counter_value() == 0);
+    {
+        std::istringstream ss(saved_bin);
+        cereal::BinaryInputArchive ar(ss);
+        a3.load(ar);
+    }
+    assert(a3.counter_value() == 3);
+    std::cout << "A binary round-trip passed: counter_value = " << a3.counter_value() << '\n';
+
+    // --- Fallback: B has no serialize, DefaultAnyFoo no-op is used ---
+    B b_instance;
+    AnyFooBar b{b_instance};
+    {
+        std::ostringstream ss;
+        {
+            cereal::JSONOutputArchive ar(ss);
+            b.save(ar);
+        }
+        std::cout << "B fallback JSON: " << ss.str() << '\n';
+        std::istringstream iss(ss.str());
+        cereal::JSONInputArchive ar(iss);
+        b.load(ar); // no-op, must not crash
+    }
+    std::cout << "B fallback round-trip passed\n";
+
+    return 0;
+}
+
 int main()
 {
     test1();
@@ -143,4 +290,5 @@ int main()
     test3();
     type_erasure_test();
     function_pack();
+    serialization_test();
 }

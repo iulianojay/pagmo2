@@ -97,6 +97,17 @@ consteval bool has_member_named()
 }
 
 template <fixed_string name, typename T>
+consteval bool has_function_template_named()
+{
+    for (auto m : std::meta::members_of(^^T, std::meta::access_context::current())) {
+        if ((std::meta::is_function(m) || std::meta::is_function_template(m)) && std::meta::has_identifier(m)
+            && std::meta::identifier_of(m) == std::string_view(name))
+            return true;
+    }
+    return false;
+}
+
+template <fixed_string name, typename T>
 constexpr auto reflect_function_impl(T &t)
 {
     template for (constexpr auto m :
@@ -104,7 +115,7 @@ constexpr auto reflect_function_impl(T &t)
     {
         if constexpr (std::meta::is_function(m) && std::meta::has_identifier(m)
                       && std::meta::identifier_of(m) == std::string_view(name)) {
-            return [&t]() mutable { return t.[:m:](); };
+            return std::bind(&[:m:], std::ref(t));
         }
     }
 }
@@ -117,7 +128,7 @@ constexpr auto reflect_function_impl(T &&t)
     {
         if constexpr (std::meta::is_function(m) && std::meta::has_identifier(m)
                       && std::meta::identifier_of(m) == std::string_view(name)) {
-            return [t]() mutable { return t.[:m:](); };
+            return std::bind(&[:m:], std::move(t));
         }
     }
 }

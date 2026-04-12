@@ -995,7 +995,7 @@ public:
      * @throws unspecified any exception thrown by the constructor from UDP.
      */
     template <typename T>
-        requires ProbGenericCtorEnabler<T>
+        requires(ProbGenericCtorEnabler<T>)
     problem &operator=(T &&x)
     {
         return (*this) = problem(std::forward<T>(x));
