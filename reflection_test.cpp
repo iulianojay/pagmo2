@@ -72,10 +72,10 @@ struct A {
         counter++;
         return 42;
     }
-    int bar()
+    double bar()
     {
         counter++;
-        return 7;
+        return 7.0;
     }
     int counter_value() const
     {
@@ -91,9 +91,85 @@ struct B {
     {
         return 99;
     }
-    int bar()
+    double bar()
     {
-        return 3;
+        return 3.0;
+    }
+};
+
+// fixed_string is structural (all-public), usable as an NTTP.
+template <std::size_t N>
+struct fixed_string {
+    char data[N]{};
+    constexpr fixed_string(const char (&s)[N])
+    {
+        std::copy_n(s, N, data);
+    }
+    constexpr operator std::string_view() const
+    {
+        return {data, N - 1};
+    }
+};
+template <std::size_t N>
+fixed_string(const char (&)[N]) -> fixed_string<N>;
+
+template <fixed_string name, typename T>
+consteval bool has_member_named()
+{
+    for (auto m : std::meta::members_of(^^T, std::meta::access_context::current())) {
+        if (std::meta::is_function(m) && std::meta::has_identifier(m)
+            && std::meta::identifier_of(m) == std::string_view(name))
+            return true;
+    }
+    return false;
+}
+
+template <fixed_string name, typename T>
+constexpr auto reflect_function_impl(T &t)
+{
+    template for (constexpr auto m :
+                  std::define_static_array(std::meta::members_of(^^T, std::meta::access_context::current())))
+    {
+        if constexpr (std::meta::is_function(m) && std::meta::has_identifier(m)
+                      && std::meta::identifier_of(m) == std::string_view(name)) {
+            return [&t]() mutable { return t.[:m:](); };
+        }
+    }
+}
+
+template <fixed_string name, typename T>
+constexpr auto reflect_function_impl(T &&t)
+{
+    template for (constexpr auto m :
+                  std::define_static_array(std::meta::members_of(^^T, std::meta::access_context::current())))
+    {
+        if constexpr (std::meta::is_function(m) && std::meta::has_identifier(m)
+                      && std::meta::identifier_of(m) == std::string_view(name)) {
+            return [t]() mutable { return t.[:m:](); };
+        }
+    }
+}
+
+template <typename Default_T, fixed_string name, typename T>
+constexpr auto reflect_function(T &t)
+{
+    if constexpr (has_member_named<name, T>()) {
+        return reflect_function_impl<name>(t);
+    } else {
+        return reflect_function_impl<name>(Default_T{}); // Fallback to default type if member not found in T
+    }
+}
+
+template <typename Default_T, fixed_string... names, typename T>
+constexpr auto reflect_functions(T &t)
+{
+    return std::tuple{reflect_function<Default_T, names>(t)...};
+}
+
+struct DefaultAnyFoo {
+    int counter_value() const
+    {
+        return -1;
     }
 };
 
@@ -104,46 +180,31 @@ struct AnyFooBar {
     template <typename T>
     constexpr AnyFooBar(T &t)
     {
-        // Use reflection to find methods named "foo" and "bar" and capture them.
-        template for (constexpr auto m :
-                      std::define_static_array(std::meta::members_of(^^T, std::meta::access_context::current())))
-        {
-            if constexpr (std::meta::is_function(m) && std::meta::has_identifier(m)) {
-                if constexpr (std::meta::identifier_of(m) == "foo") {
-                    foo_ = [&t]() mutable { return t.[:m:](); };
-                }
-                if constexpr (std::meta::identifier_of(m) == "bar") {
-                    bar_ = [&t]() mutable { return t.[:m:](); };
-                }
-                if constexpr (std::meta::identifier_of(m) == "counter_value") {
-                    counter_value_ = [&t]() mutable { return t.[:m:](); };
-                }
-            }
-        }
+        std::tie(foo_, bar_, counter_value_) = reflect_functions<DefaultAnyFoo, "foo", "bar", "counter_value">(t);
     }
 
     int foo()
     {
         return foo_();
     }
-    int bar()
+    double bar()
     {
         return bar_();
     }
     int counter_value() const
     {
-        // This method is only meaningful if the underlying type has a counter_value() method.
-        // We can use reflection to check for it and call it if it exists.
-        if (counter_value_) {
-            return counter_value_();
-        }
-        return -1; // Indicate that counter_value is not available.
+        return counter_value_();
     }
 
 private:
     std::function<int()> foo_;
-    std::function<int()> bar_;
+    std::function<double()> bar_;
     std::function<int()> counter_value_;
+
+    static int default_counter_value()
+    {
+        return -1; // Indicates no counter_value() function was found
+    }
 };
 
 int type_erasure_test()
@@ -159,8 +220,18 @@ int type_erasure_test()
     AnyFooBar b{b_instance};
     std::cout << "b.foo() = " << b.foo() << '\n';
     std::cout << "b.bar() = " << b.bar() << '\n';
-    std::cout << "b.counter_value() = " << b.counter_value() << '\n';
+    std::cout << "b.counter_value() = " << b.counter_value() << '\n' << '\n';
 
+    return 0;
+}
+
+int function_pack()
+{
+    A a_instance;
+    auto [foo, bar] = reflect_functions<DefaultAnyFoo, "foo", "bar">(a_instance);
+    std::cout << "foo() = " << foo() << '\n';
+    std::cout << "bar() = " << bar() << '\n';
+    std::cout << "counter after pack calls: " << a_instance.counter_value() << '\n';
     return 0;
 }
 
@@ -170,4 +241,5 @@ int main()
     test2();
     test3();
     type_erasure_test();
+    function_pack();
 }
