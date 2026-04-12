@@ -351,3 +351,13 @@ debug-info:
 
 # Make sure intermediate files don't get deleted
 .PRECIOUS: $(BUILD_DIR)/Makefile
+
+# Compile the standalone reflection test (requires GCC 16+ with -freflection)
+GCC16 ?= $(HOME)/.local/gcc16/bin/g++
+
+.PHONY: reflection-test
+reflection-test: reflection_test
+	./reflection_test
+
+reflection_test: reflection_test.cpp
+	$(GCC16) -std=c++26 -freflection -o reflection_test reflection_test.cpp

@@ -28,8 +28,8 @@ function(ADD_PAGMO_TESTCASE arg1)
         "$<$<CONFIG:RelWithDebInfo>:${PAGMO_CXX_FLAGS_RELEASE}>"
         "$<$<CONFIG:MinSizeRel>:${PAGMO_CXX_FLAGS_RELEASE}>"
     )
-    # Set the minimum C++ standard to C++23
-    target_compile_features(test_${_test_name} PRIVATE cxx_std_23)
+    # Set the minimum C++ standard to C++26
+    target_compile_features(test_${_test_name} PRIVATE cxx_std_26)
     target_compile_definitions(test_${_test_name} PRIVATE "_PAGMO_TEST_ROOT_=\"${CMAKE_CURRENT_LIST_DIR}\"")
     set_property(TARGET test_${_test_name} PROPERTY CXX_EXTENSIONS NO)
     set_property(TARGET test_${_test_name} PROPERTY UNITY_BUILD OFF)

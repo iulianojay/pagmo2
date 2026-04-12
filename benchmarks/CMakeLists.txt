@@ -12,8 +12,8 @@ function(ADD_PAGMO_BENCHMARK arg1)
         "$<$<CONFIG:RelWithDebInfo>:${PAGMO_CXX_FLAGS_RELEASE}>"
         "$<$<CONFIG:MinSizeRel>:${PAGMO_CXX_FLAGS_RELEASE}>"
     )
-    # Set the minimum C++ standard to C++23
-    target_compile_features(${arg1} PRIVATE cxx_std_23)
+    # Set the minimum C++ standard to C++26
+    target_compile_features(${arg1} PRIVATE cxx_std_26)
     set_property(TARGET ${arg1} PROPERTY CXX_EXTENSIONS NO)
 endfunction()
 

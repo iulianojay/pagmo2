@@ -390,10 +390,10 @@ target_compile_options(pagmo PRIVATE
     "$<$<CONFIG:MinSizeRel>:${PAGMO_CXX_FLAGS_RELEASE}>"
 )
 
-# Set the minimum C++ standard to C++23, both when building
+# Set the minimum C++ standard to C++26, both when building
 # and consuming pagmo.
-target_compile_features(pagmo PUBLIC cxx_std_23)
-# Enforce vanilla C++23 when compiling pagmo.
+target_compile_features(pagmo PUBLIC cxx_std_26)
+# Enforce vanilla C++26 when compiling pagmo.
 set_property(TARGET pagmo PROPERTY CXX_EXTENSIONS NO)
 # NOTE: make sure the include directories from the current build
 # are included first, so that if there is already a pagmo installation
