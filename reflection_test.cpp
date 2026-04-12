@@ -69,12 +69,21 @@ int test3()
 struct A {
     int foo()
     {
+        counter++;
         return 42;
     }
     int bar()
     {
+        counter++;
         return 7;
     }
+    int counter_value() const
+    {
+        return counter;
+    }
+
+private:
+    int counter = 0;
 };
 
 struct B {
@@ -93,7 +102,7 @@ struct B {
 // wiring them up automatically by name rather than via virtual dispatch.
 struct AnyFooBar {
     template <typename T>
-    constexpr AnyFooBar(T t)
+    constexpr AnyFooBar(T &t)
     {
         // Use reflection to find methods named "foo" and "bar" and capture them.
         template for (constexpr auto m :
@@ -101,10 +110,13 @@ struct AnyFooBar {
         {
             if constexpr (std::meta::is_function(m) && std::meta::has_identifier(m)) {
                 if constexpr (std::meta::identifier_of(m) == "foo") {
-                    foo_ = [t]() mutable { return t.[:m:](); };
+                    foo_ = [&t]() mutable { return t.[:m:](); };
                 }
                 if constexpr (std::meta::identifier_of(m) == "bar") {
-                    bar_ = [t]() mutable { return t.[:m:](); };
+                    bar_ = [&t]() mutable { return t.[:m:](); };
+                }
+                if constexpr (std::meta::identifier_of(m) == "counter_value") {
+                    counter_value_ = [&t]() mutable { return t.[:m:](); };
                 }
             }
         }
@@ -118,21 +130,36 @@ struct AnyFooBar {
     {
         return bar_();
     }
+    int counter_value() const
+    {
+        // This method is only meaningful if the underlying type has a counter_value() method.
+        // We can use reflection to check for it and call it if it exists.
+        if (counter_value_) {
+            return counter_value_();
+        }
+        return -1; // Indicate that counter_value is not available.
+    }
 
 private:
     std::function<int()> foo_;
     std::function<int()> bar_;
+    std::function<int()> counter_value_;
 };
 
 int type_erasure_test()
 {
-    AnyFooBar a{A{}};
+    A a_instance;
+    AnyFooBar a{a_instance};
     std::cout << "a.foo() = " << a.foo() << '\n';
     std::cout << "a.bar() = " << a.bar() << '\n';
+    std::cout << "a_instance.counter_value() = " << a_instance.counter_value() << '\n';
+    std::cout << "a.counter_value() = " << a.counter_value() << '\n' << '\n';
 
-    AnyFooBar b{B{}};
+    B b_instance;
+    AnyFooBar b{b_instance};
     std::cout << "b.foo() = " << b.foo() << '\n';
     std::cout << "b.bar() = " << b.bar() << '\n';
+    std::cout << "b.counter_value() = " << b.counter_value() << '\n';
 
     return 0;
 }
