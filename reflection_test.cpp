@@ -240,6 +240,10 @@ int serialization_test()
         a2.load(ar);
     }
     assert(a2.counter_value() == 3);
+    // foo/bar must still dispatch through a2 to a_fresh and mutate its counter
+    assert(a2.foo() == 42);  // counter -> 4
+    assert(a2.bar() == 7.0); // counter -> 5
+    assert(a2.counter_value() == 5);
     std::cout << "A JSON round-trip passed: counter_value = " << a2.counter_value() << '\n';
 
     // --- Binary: same object, different archive type ---
@@ -262,6 +266,10 @@ int serialization_test()
         a3.load(ar);
     }
     assert(a3.counter_value() == 3);
+    // foo/bar must still dispatch through a3 to a_fresh2 and mutate its counter
+    assert(a3.foo() == 42);  // counter -> 4
+    assert(a3.bar() == 7.0); // counter -> 5
+    assert(a3.counter_value() == 5);
     std::cout << "A binary round-trip passed: counter_value = " << a3.counter_value() << '\n';
 
     // --- Fallback: B has no serialize, DefaultAnyFoo no-op is used ---
@@ -278,6 +286,10 @@ int serialization_test()
         cereal::JSONInputArchive ar(iss);
         b.load(ar); // no-op, must not crash
     }
+    // B's foo/bar must still return their values after the no-op round-trip
+    assert(b.foo() == 99);
+    assert(b.bar() == 3.0);
+    assert(b.counter_value() == -1); // falls back to DefaultAnyFoo
     std::cout << "B fallback round-trip passed\n";
 
     return 0;
