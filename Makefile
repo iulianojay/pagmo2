@@ -361,3 +361,10 @@ reflection-test: reflection_test
 
 reflection_test: reflection_test.cpp
 	$(GCC16) -std=c++26 -freflection -o reflection_test reflection_test.cpp -I. -I$(PWD)/build/_deps/cereal/7075/include
+
+.PHONY: reflection-test2
+reflection-test2: reflection_test2
+	./reflection_test2
+
+reflection_test2: reflection_test2.cpp
+	$(GCC16) -std=c++26 -freflection -o reflection_test2 reflection_test2.cpp -I.

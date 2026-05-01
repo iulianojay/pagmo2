@@ -29,6 +29,7 @@ see https://www.gnu.org/licenses/. */
 #ifndef PAGMO_REFLECTION_HPP
 #define PAGMO_REFLECTION_HPP
 
+#include <array>
 #include <cassert>
 #include <concepts>
 #include <functional>
@@ -69,11 +70,11 @@ constexpr std::optional<E> string_to_enum(std::string_view name)
     return std::nullopt;
 }
 
-// fixed_string is structural (all-public), usable as an NTTP.
+// static_string is structural (all-public), usable as an NTTP.
 template <std::size_t N>
-struct fixed_string {
+struct static_string {
     char data[N]{};
-    constexpr fixed_string(const char (&s)[N])
+    constexpr static_string(const char (&s)[N])
     {
         std::copy_n(s, N, data);
     }
@@ -83,10 +84,10 @@ struct fixed_string {
     }
 };
 template <std::size_t N>
-fixed_string(const char (&)[N]) -> fixed_string<N>;
+static_string(const char (&)[N]) -> static_string<N>;
 
-template <fixed_string name, typename T>
-consteval bool has_member_named()
+template <typename T, static_string name>
+consteval bool has_function_named()
 {
     for (auto m : std::meta::members_of(^^T, std::meta::access_context::current())) {
         if (std::meta::is_function(m) && std::meta::has_identifier(m)
@@ -96,7 +97,7 @@ consteval bool has_member_named()
     return false;
 }
 
-template <fixed_string name, typename T>
+template <typename T, static_string name>
 consteval bool has_function_template_named()
 {
     for (auto m : std::meta::members_of(^^T, std::meta::access_context::current())) {
@@ -107,8 +108,8 @@ consteval bool has_function_template_named()
     return false;
 }
 
-template <fixed_string name, typename T>
-constexpr auto reflect_function_impl(T &t)
+template <static_string name, typename T>
+constexpr auto wire_function_impl(T &t)
 {
     template for (constexpr auto m :
                   std::define_static_array(std::meta::members_of(^^T, std::meta::access_context::current())))
@@ -120,8 +121,8 @@ constexpr auto reflect_function_impl(T &t)
     }
 }
 
-template <fixed_string name, typename T>
-constexpr auto reflect_function_impl(T &&t)
+template <static_string name, typename T>
+constexpr auto wire_function_impl(T &&t)
 {
     template for (constexpr auto m :
                   std::define_static_array(std::meta::members_of(^^T, std::meta::access_context::current())))
@@ -133,20 +134,49 @@ constexpr auto reflect_function_impl(T &&t)
     }
 }
 
-template <typename Default_T, fixed_string name, typename T>
-constexpr auto reflect_function(T &t)
+template <typename Default_T, static_string name, typename T>
+constexpr auto wire_function(T &t)
 {
-    if constexpr (has_member_named<name, T>()) {
-        return reflect_function_impl<name>(t);
+    if constexpr (has_function_named<T, name>()) {
+        return wire_function_impl<name>(t);
     } else {
-        return reflect_function_impl<name>(Default_T{}); // Fallback to default type if member not found in T
+        return wire_function_impl<name>(Default_T{}); // Fallback to default type if member not found in T
     }
 }
 
-template <typename Default_T, fixed_string... names, typename T>
-constexpr auto reflect_functions(T &t)
+template <typename Default_T, static_string... names, typename T>
+constexpr auto wire_functions(T &t)
 {
-    return std::tuple{reflect_function<Default_T, names>(t)...};
+    return std::tuple{wire_function<Default_T, names>(t)...};
+}
+
+template <typename T, static_string name>
+consteval std::meta::info get_function_metadata_impl()
+{
+    template for (constexpr auto m :
+                  std::define_static_array(std::meta::members_of(^^T, std::meta::access_context::current())))
+    {
+        if constexpr (std::meta::is_function(m) && std::meta::has_identifier(m)
+                      && std::meta::identifier_of(m) == std::string_view(name)) {
+            return m;
+        }
+    }
+}
+
+template <typename T, typename Default_T, static_string name>
+consteval std::meta::info get_function_metadata()
+{
+    if constexpr (has_function_named<T, name>()) {
+        return get_function_metadata_impl<T, name>();
+    } else {
+        return get_function_metadata_impl<Default_T, name>(); // Fallback to default type if member not found in T
+    }
+}
+
+template <typename T, typename Default_T, static_string... names>
+consteval auto get_functions_metadata()
+{
+    return std::array<std::meta::info, sizeof...(names)>{get_function_metadata<T, Default_T, names>()...};
 }
 
 } // namespace detail
