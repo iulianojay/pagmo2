@@ -30,4 +30,4 @@ doc/sphinx/_build
 .vscode/*
 .cache/*
 
-reflection_test
+reflection_test*
