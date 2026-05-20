@@ -18,8 +18,8 @@ ifneq ($(_BT_GOAL),)
 $(filter-out $(_BT_GOAL),$(_BT_TARGETS) $(MAKECMDGOALS)): ;
 endif
 # Shared CPM source cache so all build types reuse the same downloaded deps
-DEPS_CACHE_DIR = $(CURDIR)/build/_deps
-CMAKE = /home/jay/projects/astrea/.venv/bin/cmake
+HERE = $(CURDIR)
+DEPS_CACHE_DIR = $(CURDIR)/.cpm-cache
 CTEST ?= ctest
 MAKE = make
 INSTALL_PREFIX = ~/.local
@@ -40,6 +40,7 @@ PAGMO_BUILD_STATIC_LIBRARY ?= OFF
 CMAKE_FLAGS = -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) \
               -DCMAKE_INSTALL_PREFIX=$(INSTALL_PREFIX) \
               -DCPM_SOURCE_CACHE=$(DEPS_CACHE_DIR) \
+			  -DCPM_USE_LOCAL_PACKAGES=ON \
               -DPAGMO_BUILD_TESTS=$(PAGMO_BUILD_TESTS) \
               -DPAGMO_BUILD_BENCHMARKS=$(PAGMO_BUILD_BENCHMARKS) \
               -DPAGMO_BUILD_TUTORIALS=$(PAGMO_BUILD_TUTORIALS) \
@@ -105,13 +106,13 @@ configure: $(BUILD_DIR)/Makefile
 $(BUILD_DIR)/Makefile: CMakeLists.txt
 	@echo "==> Configuring build..."
 	@mkdir -p $(BUILD_DIR)
-	@cd $(BUILD_DIR) && $(CMAKE) ../.. $(CMAKE_FLAGS)
+	@cd $(BUILD_DIR) && $(CMAKE) $(HERE) $(CMAKE_FLAGS)
 
 .PHONY: reconfigure
 reconfigure:
 	@echo "==> Forcing reconfiguration..."
 	@mkdir -p $(BUILD_DIR)
-	@cd $(BUILD_DIR) && $(CMAKE) ../.. $(CMAKE_FLAGS)
+	@cd $(BUILD_DIR) && $(CMAKE) $(HERE) $(CMAKE_FLAGS)
 
 .PHONY: build
 build: configure
@@ -136,23 +137,23 @@ minsizerel:
 
 # Test targets
 .PHONY: test
-test: build
+test:
 	@echo "==> Running tests..."
 	@cd $(BUILD_DIR) && $(CTEST) -j$(NUM_JOBS) --output-on-failure
 
 .PHONY: test-verbose
-test-verbose: build
+test-verbose:
 	@echo "==> Running tests (verbose)..."
 	@cd $(BUILD_DIR) && $(CTEST) -j$(NUM_JOBS) -V
 
 .PHONY: test-parallel
-test-parallel: build
+test-parallel:
 	@echo "==> Running tests in parallel..."
 	@cd $(BUILD_DIR) && $(CTEST) -j$(NUM_JOBS) --parallel $(NUM_JOBS) --output-on-failure
 
 # Installation targets
 .PHONY: install
-install: build
+install:
 	@echo "==> Installing pagmo2..."
 	@$(MAKE) -C $(BUILD_DIR) install --no-print-directory
 
@@ -228,12 +229,12 @@ lint:
 
 # Package targets
 .PHONY: package
-package: build
+package:
 	@echo "==> Creating package..."
 	@cd $(BUILD_DIR) && $(MAKE) package --no-print-directory
 
 .PHONY: package-source
-package-source: configure
+package-source:
 	@echo "==> Creating source package..."
 	@cd $(BUILD_DIR) && $(MAKE) package_source --no-print-directory
 
@@ -290,9 +291,9 @@ full-build:
 		PAGMO_BUILD_TUTORIALS=ON \
 		PAGMO_WITH_EIGEN3=ON \
 		PAGMO_WITH_NLOPT=ON \
-		PAGMO_WITH_MPI=ON \
+		PAGMO_WITH_MPI=OFF \
 		PAGMO_ENABLE_IPO=ON
-	@$(MAKE) -C $(BUILD_DIR) -j$(NUM_JOBS) --no-print-directory 
+	@$(MAKE) -C $(BUILD_DIR) -j$(NUM_JOBS) --no-print-directory
 
 .PHONY: mpi
 mpi:
