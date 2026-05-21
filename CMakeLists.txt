@@ -471,11 +471,11 @@ if(TARGET cereal::cereal)
     target_link_libraries(pagmo PRIVATE cereal::cereal)
     message(STATUS "Linked with cereal::cereal (private)")
 
-    # Silence warnings from cereal headers by treating them as system includes.
+    # Expose cereal headers publicly so consumers can use pagmo's serialisation API.
     get_target_property(_CEREAL_INCDIRS cereal::cereal INTERFACE_INCLUDE_DIRECTORIES)
 
     if(_CEREAL_INCDIRS)
-        target_include_directories(pagmo SYSTEM PRIVATE ${_CEREAL_INCDIRS})
+        target_include_directories(pagmo SYSTEM PUBLIC ${_CEREAL_INCDIRS})
     endif()
 
     unset(_CEREAL_INCDIRS)
@@ -485,7 +485,7 @@ elseif(TARGET cereal)
     get_target_property(_CEREAL_INCDIRS cereal INTERFACE_INCLUDE_DIRECTORIES)
 
     if(_CEREAL_INCDIRS)
-        target_include_directories(pagmo SYSTEM PRIVATE ${_CEREAL_INCDIRS})
+        target_include_directories(pagmo SYSTEM PUBLIC ${_CEREAL_INCDIRS})
     endif()
 
     unset(_CEREAL_INCDIRS)
