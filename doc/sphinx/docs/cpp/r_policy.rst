@@ -103,7 +103,7 @@ Replacement policy
       Generic constructor from a UDRP.
 
       This constructor participates in overload resolution only if ``T``, after the removal of reference
-      and cv qualifiers, is not :cpp:class:`~pagmo::r_policy` and if it satisfies :cpp:class:`pagmo::is_udrp`.
+      and cv qualifiers, is not :cpp:class:`~pagmo::r_policy` and if it satisfies :cpp:class:`pagmo::IsUdrp`.
 
       This constructor will construct an :cpp:class:`~pagmo::r_policy` from the UDRP (user-defined replacement policy)
       *x* of type ``T``. The input parameter *x* will be perfectly forwarded to construct the internal UDRP instance.
@@ -117,7 +117,7 @@ Replacement policy
       Generic assignment operator from a UDRP.
 
       This operator participates in overload resolution only if ``T``, after the removal of reference
-      and cv qualifiers, is not :cpp:class:`~pagmo::r_policy` and if it satisfies :cpp:class:`pagmo::is_udrp`.
+      and cv qualifiers, is not :cpp:class:`~pagmo::r_policy` and if it satisfies :cpp:class:`pagmo::IsUdrp`.
 
       This operator will set the internal UDRP to *x* by constructing an :cpp:class:`~pagmo::r_policy` from *x*,
       and then move-assigning the result to *this*.
@@ -295,7 +295,7 @@ Associated type traits
 
       The value of the type trait.
 
-.. cpp:class:: template <typename T> is_udrp
+.. cpp:class:: template <typename T> IsUdrp
 
    This type trait detects if ``T`` is a user-defined replacement policy (or UDRP).
 

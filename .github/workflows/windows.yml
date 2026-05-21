@@ -1,0 +1,107 @@
+name: Windows CI
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  windows-no-deps:
+    name: Windows - No Optional Dependencies
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure CMake
+        run: |
+          cmake -B build/release -G "Visual Studio 17 2022" -A x64 `
+                -DCPM_SOURCE_CACHE="$PWD/build/_deps" `
+                -DPAGMO_BUILD_TESTS=ON `
+                -DPAGMO_WITH_EIGEN3=OFF `
+                -DPAGMO_WITH_NLOPT=OFF `
+                -DPAGMO_WITH_IPOPT=OFF
+        shell: powershell
+      - name: Build
+        run: cmake --build build/release --config Release --parallel
+        shell: powershell
+      - name: Test
+        run: |
+          $env:PATH = "$PWD\build\release\Release;$env:PATH"
+          ctest --test-dir build/release -C Release -j4 --output-on-failure
+        shell: powershell
+
+  windows-eigen3:
+    name: Windows - With Eigen3
+    runs-on: windows-latest
+    needs: windows-no-deps
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure CMake
+        run: |
+          cmake -B build/release -G "Visual Studio 17 2022" -A x64 `
+                -DCPM_SOURCE_CACHE="$PWD/build/_deps" `
+                -DPAGMO_BUILD_TESTS=ON `
+                -DPAGMO_WITH_EIGEN3=ON `
+                -DPAGMO_WITH_NLOPT=OFF `
+                -DPAGMO_WITH_IPOPT=OFF
+        shell: powershell
+      - name: Build
+        run: cmake --build build/release --config Release --parallel
+        shell: powershell
+      - name: Test
+        run: |
+          $env:PATH = "$PWD\build\release\Release;$env:PATH"
+          ctest --test-dir build/release -C Release -j4 --output-on-failure
+        shell: powershell
+
+  windows-nlopt:
+    name: Windows - With NLopt
+    runs-on: windows-latest
+    needs: windows-no-deps
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure CMake
+        run: |
+          cmake -B build/release -G "Visual Studio 17 2022" -A x64 `
+                -DCPM_SOURCE_CACHE="$PWD/build/_deps" `
+                -DPAGMO_BUILD_TESTS=ON `
+                -DPAGMO_WITH_EIGEN3=OFF `
+                -DPAGMO_WITH_NLOPT=ON `
+                -DPAGMO_WITH_IPOPT=OFF
+        shell: powershell
+      - name: Build
+        run: cmake --build build/release --config Release --parallel
+        shell: powershell
+      - name: Test
+        run: |
+          $env:PATH = "$PWD\build\release\Release;$env:PATH"
+          ctest --test-dir build/release -C Release -j4 --output-on-failure
+        shell: powershell
+
+  windows-all-deps:
+    name: Windows - All Dependencies
+    runs-on: windows-latest
+    needs: [windows-eigen3, windows-nlopt]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure CMake
+        run: |
+          cmake -B build/release -G "Visual Studio 17 2022" -A x64 `
+                -DCPM_SOURCE_CACHE="$PWD/build/_deps" `
+                -DPAGMO_BUILD_TESTS=ON `
+                -DPAGMO_BUILD_TUTORIALS=ON `
+                -DPAGMO_WITH_EIGEN3=ON `
+                -DPAGMO_WITH_NLOPT=ON `
+                -DPAGMO_WITH_IPOPT=OFF `
+                -DPAGMO_ENABLE_IPO=ON
+        shell: powershell
+      - name: Build
+        run: cmake --build build/release --config Release --parallel
+        shell: powershell
+      - name: Test
+        run: |
+          $env:PATH = "$PWD\build\release\Release;$env:PATH"
+          ctest --test-dir build/release -C Release -j4 --output-on-failure
+        shell: powershell

@@ -1,0 +1,79 @@
+name: Linux CI
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  linux-no-deps:
+    name: Linux - No Optional Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install base dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-13 g++-13
+      - name: Build
+        env:
+          CC: gcc-13
+          CXX: g++-13
+        run: make CMAKE=cmake BUILD_TYPE=Release PAGMO_BUILD_TESTS=ON build
+      - name: Test
+        run: make CMAKE=cmake BUILD_TYPE=Release test
+
+  linux-eigen3:
+    name: Linux - With Eigen3
+    runs-on: ubuntu-latest
+    needs: linux-no-deps
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-13 g++-13
+      - name: Build
+        env:
+          CC: gcc-13
+          CXX: g++-13
+        run: make CMAKE=cmake BUILD_TYPE=Release PAGMO_BUILD_TESTS=ON PAGMO_WITH_EIGEN3=ON build
+      - name: Test
+        run: make CMAKE=cmake BUILD_TYPE=Release test
+
+  linux-nlopt:
+    name: Linux - With NLopt
+    runs-on: ubuntu-latest
+    needs: linux-no-deps
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-13 g++-13
+      - name: Build
+        env:
+          CC: gcc-13
+          CXX: g++-13
+        run: make CMAKE=cmake BUILD_TYPE=Release PAGMO_BUILD_TESTS=ON PAGMO_WITH_NLOPT=ON build
+      - name: Test
+        run: make CMAKE=cmake BUILD_TYPE=Release test
+
+  linux-all-deps:
+    name: Linux - All Dependencies
+    runs-on: ubuntu-latest
+    needs: [linux-eigen3, linux-nlopt]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install all dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-13 g++-13 gfortran libblas-dev liblapack-dev
+      - name: Build and Test
+        env:
+          CC: gcc-13
+          CXX: g++-13
+        run: make CMAKE=cmake full-test

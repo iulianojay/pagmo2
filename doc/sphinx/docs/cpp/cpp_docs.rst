@@ -90,6 +90,7 @@ Implemented islands
 
   islands/thread_island
   islands/fork_island
+  islands/mpi_island
 
 Implemented batch evaluators
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

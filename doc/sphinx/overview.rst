@@ -216,10 +216,11 @@ strategies (e.g., multithreading, multiprocessing,
 cluster architectures, etc.).
 
 ========================================================== =========================================
-Common Name                                                Docs of the C++ class                    
+Common Name                                                Docs of the C++ class
 ========================================================== =========================================
-Thread island                                              :cpp:class:`pagmo::thread_island`        
-Fork island                                                :cpp:class:`pagmo::fork_island`          
+Thread island                                              :cpp:class:`pagmo::thread_island`
+Fork island                                                :cpp:class:`pagmo::fork_island`
+MPI island                                                 :cpp:class:`pagmo::mpi_island`
 ========================================================== =========================================
 
 List of batch fitness evaluators
